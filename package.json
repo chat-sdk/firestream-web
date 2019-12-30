@@ -1,11 +1,11 @@
 {
-  "name": "fireflyy",
+  "name": "firefly",
   "version": "0.1.0",
   "description": "",
   "keywords": [],
   "license": "ISC",
   "author": "Pepe Becker <pepe@chatsdk.co> (https://chatsdk.co)",
-  "main": "dist/fireflyy.js",
+  "main": "dist/firefly.js",
   "scripts": {
     "build": "tsc"
   },

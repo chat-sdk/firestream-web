@@ -1,11 +1,10 @@
-import { RoleType } from './types/role-type'
-import { ContactType } from './types/contact-type'
-import { Fireflyy } from './fireflyy'
-import { firestore } from 'firebase'
-import { Keys } from './firestore/keys'
+import { RoleType } from '../types/role-type'
+import { ContactType } from '../types/contact-type'
+import { Firefly } from '../firefly'
+import { Keys } from '../firebase/service/keys'
 
 export interface DataProvider {
-    data(user: User): { [key: string]: any } | undefined
+    data(user?: User): { [key: string]: any }
 }
 
 export class User {
@@ -34,32 +33,34 @@ export class User {
     }
 
     isMe(): boolean {
-        return this.id === Fireflyy.shared().currentUserId()
+        return this.id === Firefly.shared().currentUserId()
     }
 
     static currentUser(role?: RoleType): User {
-        const uid = Fireflyy.shared().currentUserId()
+        const uid = Firefly.shared().currentUserId()
         if (uid) {
             return new User(uid, role)
         }
-        throw new Error('Fireflyy.shared().currentUserId() returned undefined')
+        throw new Error('Firefly.shared().currentUserId() returned undefined')
     }
 
     static dateDataProvider(): DataProvider {
         return {
-            data: user => ({ [Keys.Date]: firestore.FieldValue.serverTimestamp() })
+            data: user => ({
+                [Keys.Date]: Firefly.shared().getFirebaseService().core.timestamp()
+            })
         }
     }
 
     static roleTypeDataProvider(): DataProvider {
         return {
-            data: user => user.roleType?.data()
+            data: user => user?.roleType?.data() || {}
         }
     }
 
     static contactTypeDataProvider(): DataProvider {
         return {
-            data: user => user.contactType?.data()
+            data: user => user?.contactType?.data() || {}
         }
     }
 

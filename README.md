@@ -1,12 +1,12 @@
-# Fireflyy Web
+# Firefly Web
 
-## Initializing Fireflyy with Firebase App
+## Initializing Firefly with Firebase App
 ```js
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
-import { Fly } from 'fireflyy'
+import { Fl } from 'firefly'
 
 const app = firebase.initializeApp({ /* firebaseConfig */ })
 
-Fly.y.initialize(app)
+Fl.y.initialize(app)
 ```

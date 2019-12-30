@@ -1,3 +1,8 @@
+export enum DatabaseType {
+    Firestore,
+    Realtime
+}
+
 export class Config {
 
     /**
@@ -23,5 +28,22 @@ export class Config {
      * How many historic messages should we retrieve?
      */
     messageHistoryLimit = 100
+
+    /**
+     * This will be the root of the Firefly Firebase database i.e.
+     * /root/[sandbox]/users
+     */
+    root = 'pepe'
+
+    /**
+     * This will be the sandbox of the Firefly Firebase database i.e.
+     * /root/[sandbox]/users
+     */
+    sandbox = 'firefly'
+
+    /**
+     * Which database to use - Firestore or Realtime database
+     */
+    database = DatabaseType.Firestore
 
 }

@@ -1,18 +1,18 @@
 import { Sendable } from './sendable'
 import { SendableType } from '../types/sendable-types'
 import { InvitationType } from '../types/invitation-type'
+import { Firefly } from '../firefly'
 
 export class Invitation extends Sendable {
 
     static ChatId = 'id'
 
-    constructor(type: InvitationType, chatId: string) {
+    constructor(type?: InvitationType, chatId?: string) {
         super()
+        this.type = SendableType.Invitation
         if (type && chatId) {
-            super.setBodyType(type)
-            this.body.put(Invitation.ChatId, chatId)
-        } else {
-            this.type = SendableType.Invitation
+            this.setBodyType(type)
+            this.body[Invitation.ChatId] = chatId
         }
     }
 
@@ -27,13 +27,16 @@ export class Invitation extends Sendable {
     async accept(): Promise<void> {
         if (this.getBodyType().equals(InvitationType.chat())) {
             try {
-                throw new Error('Not implememted yet!')
-                // return Fireflyy.shared().joinChat(getChatId())
+                return Firefly.shared().joinChat(this.getChatId())
             } catch (err) {
                 throw err
             }
         }
         return Promise.resolve()
+    }
+
+    static fromSendable(sendable: Sendable): Invitation {
+        return sendable.copyTo(new Invitation())
     }
 
 }

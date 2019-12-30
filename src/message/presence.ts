@@ -8,15 +8,18 @@ export class Presence extends Sendable {
 
     constructor(type?: PresenceType) {
         super()
+        this.type = SendableType.Presence
         if (type) {
             super.setBodyType(type)
-        } else {
-            this.type = SendableType.Presence
         }
     }
 
     getBodyType(): PresenceType {
         return new PresenceType(super.getBodyType())
+    }
+
+    static fromSendable(sendable: Sendable): Presence {
+        return sendable.copyTo(new Presence())
     }
 
 }

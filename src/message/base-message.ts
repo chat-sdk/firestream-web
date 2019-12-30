@@ -1,10 +1,10 @@
-export type TMessageBody = { [key: string]: any }
+import { IJson } from '../interfaces/json'
 
-export class Message {
+export class BaseMessage {
 
     from = ''
     date = new Date()
-    body: TMessageBody = {}
+    body: IJson = {}
     type = ''
 
     getFrom(): string {
@@ -23,11 +23,11 @@ export class Message {
         this.date = date
     }
 
-    getBody(): TMessageBody {
+    getBody(): IJson {
         return this.body
     }
 
-    setBody(body: TMessageBody) {
+    setBody(body: IJson) {
         this.body = body
     }
 

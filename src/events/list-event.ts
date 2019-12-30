@@ -1,14 +1,13 @@
 import { Event } from './event'
 import { EventType } from './event-type'
-
-export type TEventData = { [key: string]: any }
+import { IJson } from '../interfaces/json'
 
 export class ListEvent extends Event {
 
     id: string
-    data: TEventData
+    data: IJson
 
-    constructor(id: string, data: TEventData, type: EventType) {
+    constructor(id: string, data: IJson, type: EventType) {
         super(type)
         this.id = id
         this.data = data
@@ -20,15 +19,15 @@ export class ListEvent extends Event {
         }
     }
 
-    static added(id: string, data: TEventData): ListEvent {
+    static added(id: string, data: IJson): ListEvent {
         return new ListEvent(id, data, EventType.Added)
     }
 
-    static removed(id: string, data: TEventData): ListEvent {
+    static removed(id: string, data: IJson): ListEvent {
         return new ListEvent(id, data, EventType.Removed)
     }
 
-    static modified(id: string, data: TEventData): ListEvent {
+    static modified(id: string, data: IJson): ListEvent {
         return new ListEvent(id, data, EventType.Modified)
     }
 

@@ -1,14 +1,14 @@
 import { Subject, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { MultiQueueSubject } from '../rx/multi-queue-subject'
+import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { Sendable } from '../message/sendable'
 import { Message } from '../message/message'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { TypingState } from '../message/typing-state'
 import { Presence } from '../message/presence'
 import { Invitation } from '../message/invitation'
-import { MicroMessage } from '../namespace/micro-message'
+import { FireflyMessage } from '../namespace/firefly-message'
 
 export class Events {
 
@@ -20,48 +20,51 @@ export class Events {
 
     protected sendables = new MultiQueueSubject<Sendable>()
 
-    protected errors = Subject.create()
-
-    getErrors(): Observable<any> {
-        return this.errors
-    }
+    protected errors = new Subject<Error>()
 
     getMessages(): MultiQueueSubject<Message> {
         return this.messages
     }
 
     /**
-     * A Micro Message is no different from a Message. The reason this method
+     * A Firefly Message is no different from a Message. The reason this method
      * exists is because Message is a very common class name. If for any reason
-     * your project already has a Message object, you can use the MicroMessage
+     * your project already has a Message object, you can use the FireflyMessage
      * to avoid a naming clash
      * @return events of messages
      */
-    public getMicroMessages(): Observable<MicroMessage> {
-        return this.messages.pipe(map(MicroMessage.fromMessage))
+    getFireflyMessages(): Observable<FireflyMessage> {
+        return this.messages.pipe(map(FireflyMessage.fromMessage))
     }
 
-    public getDeliveryReceipts(): MultiQueueSubject<DeliveryReceipt> {
+    /**
+     * Get a stream of errors from the chat
+     * @return
+     */
+    getErrors(): Observable<Error> {
+        return this.errors
+    }
+
+    getDeliveryReceipts(): MultiQueueSubject<DeliveryReceipt> {
         return this.deliveryReceipts
     }
 
-    public getTypingStates(): MultiQueueSubject<TypingState> {
+    getTypingStates(): MultiQueueSubject<TypingState> {
         return this.typingStates
     }
 
-    public getSendables(): MultiQueueSubject<Sendable> {
+    getSendables(): MultiQueueSubject<Sendable> {
         return this.sendables
     }
 
-
-    public getPresences(): MultiQueueSubject<Presence> {
+    getPresences(): MultiQueueSubject<Presence> {
         return this.presences
     }
-    public getInvitations(): MultiQueueSubject<Invitation> {
+    getInvitations(): MultiQueueSubject<Invitation> {
         return this.invitations
     }
 
-    public impl_throwablePublishSubject(): Subject<any> {
+    publishThrowable(): Subject<Error> {
         return this.errors
     }
 

@@ -6,15 +6,18 @@ export class TypingState extends Sendable {
 
     constructor(type?: TypingStateType) {
         super()
+        this.type = SendableType.TypingState
         if (type) {
             this.setBodyType(type)
-        } else {
-            this.type = SendableType.TypingState
         }
     }
 
     public getBodyType(): TypingStateType {
         return new TypingStateType(super.getBodyType())
+    }
+
+    static fromSendable(sendable: Sendable): TypingState {
+        return sendable.copyTo(new TypingState())
     }
 
 }

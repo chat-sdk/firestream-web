@@ -1,11 +1,11 @@
-import { Fireflyy } from '../fireflyy'
+import { Firefly } from '../firefly'
 
 /**
- * Just a convenience method to make invocations of Fireflyy more compact
- * Fire.flyy.sendMessage()
+ * Just a convenience method to make invocations of Firefly more compact
+ * Fire.fly.sendMessage()
  * instead of
- * Fireflyy.shared().sendMessage()
+ * Firefly.shared().sendMessage()
  */
 export namespace Fire {
-    export const flyy = Fireflyy.shared()
+    export const fly = Firefly.shared()
 }

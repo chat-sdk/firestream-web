@@ -1,21 +1,22 @@
-import { Fireflyy } from '../fireflyy'
-import { Keys } from '../firestore/keys'
+import { Firefly } from '../firefly'
+import { Keys } from '../firebase/service/keys'
 import { BaseType } from '../types/base-type'
-import { Message, TMessageBody } from '../firestore/message'
+import { BaseMessage } from './base-message'
+import { IJson } from '../interfaces/json'
 
-export class Sendable extends Message {
+export class Sendable extends BaseMessage {
 
-    id?: string
+    id!: string
 
-    constructor(id?: string, data?: TMessageBody) {
+    constructor(id?: string, data?: IJson) {
         super()
 
         if (!id || !data) {
-            const uid = Fireflyy.shared().currentUserId()
+            const uid = Firefly.shared().currentUserId()
             if (uid) {
                 this.from = uid
             } else {
-                console.error(new Error('Fireflyy.shared().currentUserId() returned undefined'))
+                console.error(new Error('Firefly.shared().currentUserId() returned undefined'))
             }
             return
         }
@@ -23,16 +24,16 @@ export class Sendable extends Message {
         this.id = id
 
         if (typeof data[Keys.From] === 'string') {
-            this.from = data[Keys.From]
+            this.from = data[Keys.From] as string
         }
         if (data[Keys.Date] instanceof Date) {
-            this.date = data[Keys.Date]
+            this.date = data[Keys.Date] as Date
         }
         if (typeof data[Keys.Body] === 'object') {
-            this.body = data[Keys.Body]
+            this.body = data[Keys.Body] as IJson
         }
         if (typeof data[Keys.Type] === 'string') {
-            this.type = data[Keys.Type]
+            this.type = data[Keys.Type] as string
         }
     }
 
@@ -42,17 +43,36 @@ export class Sendable extends Message {
 
     getBodyType(): BaseType {
         if (typeof this.body[Keys.Type] === 'string') {
-            const type: string = this.body[Keys.Type]
+            const type = this.body[Keys.Type] as string
             return new BaseType(type)
         }
         return BaseType.none()
     }
 
     getBodyString(key: string): string {
-        if (this.body[key] instanceof String) {
-            return this.body[key]
+        const value = this.body[key]
+        if (typeof value === 'string') {
+            return value
         }
         throw new Error('Body doesn\'t contain key: ' + key)
+    }
+
+    copyTo<T extends Sendable>(sendable: T): T {
+        sendable.id = this.id
+        sendable.from = this.from
+        sendable.body = this.body
+        sendable.date = this.date
+        return sendable
+    }
+
+    toData() {
+        const data = {
+            [Keys.From]: this.from,
+            [Keys.Body]: this.body,
+            [Keys.Date]: Firefly.shared().getFirebaseService().core.timestamp(),
+            [Keys.Type]: this.type,
+        }
+        return data
     }
 
 }

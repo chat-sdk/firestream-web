@@ -6,13 +6,12 @@ export class DeliveryReceipt extends Sendable {
 
     static MessageId = 'id'
 
-    constructor(type?: DeliveryReceiptType, messageUid?: String) {
+    constructor(type?: DeliveryReceiptType, messageUid?: string) {
         super()
+        this.type = SendableType.DeliveryReceipt
         if (type && messageUid) {
             this.setBodyType(type)
-            this.body.put(DeliveryReceipt.MessageId, messageUid)
-        } else {
-            this.type = SendableType.DeliveryReceipt
+            this.body[DeliveryReceipt.MessageId] = messageUid
         }
     }
 
@@ -22,6 +21,10 @@ export class DeliveryReceipt extends Sendable {
 
     getBodyType(): DeliveryReceiptType {
         return new DeliveryReceiptType(super.getBodyType())
+    }
+
+    static fromSendable(sendable: Sendable): DeliveryReceipt {
+        return sendable.copyTo(new DeliveryReceipt())
     }
 
 }

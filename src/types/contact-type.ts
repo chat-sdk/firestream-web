@@ -1,5 +1,5 @@
 import { BaseType } from './base-type'
-import { Keys } from '../firestore/keys'
+import { Keys } from '../firebase/service/keys'
 
 export class ContactType extends BaseType {
 

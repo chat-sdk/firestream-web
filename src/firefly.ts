@@ -91,9 +91,12 @@ export class Firefly extends AbstractChat {
         return this.fbApp
     }
 
+    isInitialized(): boolean {
+        return this.config != null
+    }
+
     async connect(): Promise<void> {
         this.disconnect()
-        console.warn('Firefly.connect()')
 
         if (this.config == null) {
             throw new Error('You need to call Fl.y.initialize(…)')
@@ -110,9 +113,6 @@ export class Firefly extends AbstractChat {
             stream$ = stream$.pipe(
                 filter(MessageStreamFilter.bySendableType(SendableType.typingState(), SendableType.presence()))
             )
-            stream$.forEach(sendable => {
-                console.warn(sendable.type, sendable.body)
-            })
         }
         // If deletion is enabled, we don't filter so we delete all the message types
         this.dl.add(stream$.pipe(flatMap(this.deleteSendable)).subscribe())
@@ -208,16 +208,16 @@ export class Firefly extends AbstractChat {
         return super.deleteSendableAtPath(Paths.messagePath(sendable.id))
     }
 
-    sendPresence(userId: string, type: PresenceType): Promise<string> {
+    sendPresence(userId: string, type: PresenceType): Promise<void> {
         return this.send(userId, new Presence(type))
     }
 
-    sendInvitation(userId: string, type: InvitationType, groupId: string): Promise<string> {
+    sendInvitation(userId: string, type: InvitationType, groupId: string): Promise<void> {
         return this.send(userId, new Invitation(type, groupId))
     }
 
-    send(toUserId: string, sendable: Sendable): Promise<string> {
-        return this.sendToPath(Paths.messagesPath(toUserId), sendable)
+    send(toUserId: string, sendable: Sendable, newId?: string): Promise<void> {
+        return this.sendToPath(Paths.messagesPath(toUserId), sendable, newId)
     }
 
     /**
@@ -229,7 +229,7 @@ export class Firefly extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: string): Promise<string> {
+    sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: string): Promise<void> {
         return this.send(userId, new DeliveryReceipt(type, messageId))
     }
 
@@ -240,15 +240,15 @@ export class Firefly extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendTypingIndicator(userId: string, type: TypingStateType): Promise<string> {
+    sendTypingIndicator(userId: string, type: TypingStateType): Promise<void> {
         return this.send(userId, new TypingState(type))
     }
 
-    sendMessageWithText(userId:  string, text: string): Promise<string> {
+    sendMessageWithText(userId:  string, text: string): Promise<void> {
         return this.send(userId, new TextMessage(text))
     }
 
-    sendMessageWithBody(userId: string, body: IJson): Promise<string> {
+    sendMessageWithBody(userId: string, body: IJson): Promise<void> {
         return this.send(userId, new Message(body))
     }
 

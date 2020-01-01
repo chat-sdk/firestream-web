@@ -75,10 +75,8 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      */
     protected messagesOn(newerThan: Date): Observable<Sendable>
     protected messagesOn(newerThan?: Date): Observable<Sendable> {
-        console.warn(`AbstractChat.messagesOn('${this.messagesPath()})'`)
         const $sendables = this.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
         $sendables.forEach(sendable => {
-            console.warn('\t$sendables.forEach:', sendable)
             if (sendable) {
                 this.getEvents().getSendables().next(sendable)
                 this.sendables.push(sendable)
@@ -104,7 +102,7 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      * @return single date
      */
     protected async dateOfLastDeliveryReceipt(): Promise<Date> {
-        return this.core.dateOfLastSendMessage(this.messagesPath())
+        return this.core.dateOfLastSentMessage(this.messagesPath())
     }
 
     /**
@@ -120,10 +118,11 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      * Send a message to a messages ref
      * @param messagesPath
      * @param sendable item to be sent
+     * @param newId the ID of the new message
      * @return single containing message id
      */
-    sendToPath(messagesPath: Path, sendable: Sendable): Promise<string> {
-        return this.core.send(messagesPath, sendable)
+    sendToPath(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void> {
+        return this.core.send(messagesPath, sendable, newId)
     }
 
     /**
@@ -204,30 +203,18 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
     }
 
     /**
-     * Send a sendable
-     * @param toUserId user to send the message to
-     * @param sendable item to send
-     * @return single with message Id
-     */
-    abstract send(toUserId: string, sendable: Sendable): Promise<string>
-
-    /**
      * Connect to the chat
      * @throws Exception error if we are not connected
      */
     async connect(): Promise<void> {
-        console.warn('AbstractChat.connect()-0')
         const date =  await this.dateOfLastDeliveryReceipt()
-        console.warn('AbstractChat.connect()-1')
         this.messagesOn(date).subscribe(this.passMessageResultToStream.bind(this), this.error)
-        console.warn('AbstractChat.connect()-2')
     }
 
     /**
      * Disconnect from a chat
      */
     disconnect() {
-        console.warn('AbstractChat.disconnect()')
         this.dl.dispose()
     }
 

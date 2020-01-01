@@ -1,6 +1,6 @@
 import { Keys } from './keys'
 import { Path } from './path'
-import { Firefly } from '../../firefly';
+import { Firefly } from '../../firefly'
 
 export class Paths extends Keys {
 
@@ -60,6 +60,10 @@ export class Paths extends Keys {
 
     static groupChatPath(chatId: string): Path {
         return this.chatsPath().child(chatId)
+    }
+
+    static groupChatMetaPath(chatId: string): Path {
+        return this.chatsPath().child(chatId).child(this.Meta)
     }
 
     static groupChatMessagesPath(chatId: string): Path {

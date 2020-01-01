@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { map, filter } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { FirebaseChatHandler } from '../service/firebase-chat-handler'
 import { RxFirestore } from './rx-firestore'
@@ -9,7 +9,7 @@ import { Path } from '../service/path'
 import { User } from '../../chat/user'
 import { Keys } from '../service/keys'
 import { IJson } from '../../interfaces/json'
-import { Generic } from '../generic/generic'
+import { ChatMeta } from '../../chat/chat'
 
 export class FirestoreChatHandler extends FirebaseChatHandler {
 
@@ -21,22 +21,21 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         return new RxFirestore().set(Ref.document(Paths.userGroupChatPath(chatId)), User.dateDataProvider().data())
     }
 
-    metaOn(path: Path): Observable<Generic.UserMetaData> {
+    metaOn(path: Path): Observable<ChatMeta> {
+        // Remove the last path because in this case, the document ref does not include the "meta keyword"
         return new RxFirestore().on(Ref.document(path)).pipe(map(snapshot => {
-            const data = snapshot.data() as Generic.UserMetaData
-            if (data) {
-                const meta = data[Keys.Meta]
-                if (typeof meta === 'object') {
-                    return meta
-                }
+            const meta: ChatMeta = {
+                name: snapshot.get(Keys.Name),
+                created: snapshot.get(Keys.Created),
+                avatarURL: snapshot.get(Keys.Avatar),
             }
-            return null
-        }), filter(s => !!s)) as Observable<Generic.UserMetaData>
+
+            return meta
+        }))
     }
 
-    async add(path: Path, data: IJson): Promise<string> {
-        const ref = await new RxFirestore().add(Ref.collection(path), data)
-        return ref.id
+    async add(path: Path, data: IJson, newId?: string): Promise<string> {
+        return new RxFirestore().add(Ref.collection(path), data, newId)
     }
 
 }

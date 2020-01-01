@@ -8,11 +8,9 @@ export class RxFirestore {
     on(ref: firestore.DocumentReference): Observable<firestore.DocumentSnapshot> {
         return new Observable(emitter => {
             this.unsubscribe = ref.onSnapshot(snapshot => {
-                if (snapshot && snapshot.exists) {
+                if (snapshot) {
                     emitter.next(snapshot)
-                } else {
-                    // emitter.onError(new Throwable(Fly.y.context().getString(R.string.error_null_snapshot)));
-                } 
+                }
             }, emitter.error)
         })
     }
@@ -29,8 +27,10 @@ export class RxFirestore {
         })
     }
 
-    add(ref: firestore.CollectionReference, data: firestore.DocumentData): Promise<firestore.DocumentReference> {
-        return ref.add(data)
+    async add(ref: firestore.CollectionReference, data: firestore.DocumentData, newId?: string): Promise<string> {
+        const docRef = ref.doc(newId)
+        await docRef.set(data)
+        return docRef.id
     }
 
     delete(ref: firestore.DocumentReference): Promise<void> {

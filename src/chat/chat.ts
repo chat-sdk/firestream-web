@@ -1,10 +1,10 @@
 import { BehaviorSubject, Observable} from 'rxjs'
+import { flatMap, filter } from 'rxjs/operators'
 
 import { AbstractChat } from './abstract-chat'
 import { User, DataProvider } from './user'
 import { UserEvent } from '../events/user-event'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
-import { flatMap } from 'rxjs/operators'
 import { DeliveryReceiptType } from '../types/delivery-receipt-type'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Sendable } from '../message/sendable'
@@ -20,11 +20,19 @@ import { TypingStateType } from '../types/typing-state-type'
 import { TypingState } from '../message/typing-state'
 import { TextMessage } from '../message/text-message'
 import { Message } from '../message/message'
+import { MessageStreamFilter } from '../filter/message-stream-filter'
+
+export interface ChatMeta {
+    name: string
+    avatarURL: string
+    created: Date
+}
 
 export class Chat extends AbstractChat {
 
     protected id: string
     protected joined?: Date
+    protected created?: Date
     protected name?: string
     protected avatarURL?: string
 
@@ -44,13 +52,15 @@ export class Chat extends AbstractChat {
 
     async connect(): Promise<void> {
         this.disconnect()
-        console.warn('Chat.connect()')
+
+        console.log('Connect to chat:', this.id)        
 
         // If delivery receipts are enabled, send the delivery receipt
         if (this.config.deliveryReceiptsEnabled) {
             this.dl.add(this.getEvents()
                     .getMessages()
                     .pastAndNewEvents()
+                    .pipe(filter(MessageStreamFilter.notFromMe()))
                     .pipe(flatMap(message => {
                         return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
                     }))
@@ -70,22 +80,17 @@ export class Chat extends AbstractChat {
 
         // Handle name and image change
         const chatHandler = Firefly.shared().getFirebaseService().chat
-        this.dl.add(chatHandler.metaOn(Paths.groupChatPath(this.id)).subscribe(meta => {
-            if (meta != null) {
-                const newName = meta[Keys.Name]
-                if (typeof newName === 'string') {
-                    if (newName !== this.name) {
-                        this.name = newName
-                        this.nameStream.next(this.name)
-                    }
-                }
-                const newAvatarURL = meta[Keys.Avatar]
-                if (typeof newAvatarURL === 'string') {
-                    if (newAvatarURL !== this.avatarURL) {
-                        this.avatarURL = newAvatarURL
-                        this.avatarURLStream.next(this.avatarURL)
-                    }
-                }
+        this.dl.add(chatHandler.metaOn(Paths.groupChatMetaPath(this.id)).subscribe(meta => {
+            if (!meta) return
+            let newName = meta.name
+            if (newName && newName != this.name) {
+                this.name = newName
+                this.nameStream.next(this.name)
+            }
+            let newAvatarURL = meta.avatarURL
+            if (newAvatarURL && newAvatarURL != this.avatarURL) {
+                this.avatarURL = newAvatarURL
+                this.avatarURLStream.next(this.avatarURL)
             }
         }, this.error))
 
@@ -134,12 +139,6 @@ export class Chat extends AbstractChat {
         await Promise.all(promises)
     }
 
-    send(sendable: Sendable): Promise<string>
-    send(toUserId: string, sendable: Sendable): Promise<string>
-    send(arg1: string | Sendable, arg2?: Sendable): Promise<string> {
-        return super.sendToPath(Paths.groupChatMessagesPath(this.id), arg2 || (arg1 as Sendable))
-    }
-
     addUsers(users: User[]): Promise<void>
     addUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void>
     addUsers(arg1: Path | User[], arg2?: DataProvider, arg3?: User[]): Promise<void> {
@@ -174,6 +173,10 @@ export class Chat extends AbstractChat {
         return this.id
     }
 
+    send(sendable: Sendable, newId?: string): Promise<void> {
+        return this.sendToPath(Paths.groupChatMessagesPath(this.id), sendable, newId)
+    }
+
     leave(): Promise<void> {
         return this.removeUser(User.currentUser()).then(this.disconnect)
     }
@@ -186,8 +189,8 @@ export class Chat extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string): Promise<string> {
-        return this.send(new DeliveryReceipt(type, messageId))
+    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: string): Promise<void> {
+        return this.send(new DeliveryReceipt(type, messageId), newId)
     }
 
     /**
@@ -196,16 +199,16 @@ export class Chat extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendTypingIndicator(type: TypingStateType): Promise<string> {
-        return this.send(new TypingState(type))
+    sendTypingIndicator(type: TypingStateType, newId?: string): Promise<void> {
+        return this.send(new TypingState(type), newId)
     }
 
-    sendMessageWithText(text: string): Promise<string> {
-        return this.send(new TextMessage(text))
+    sendMessageWithText(text: string, newId?: string): Promise<void> {
+        return this.send(new TextMessage(text), newId)
     }
 
-    sendMessageWithBody(body: { [key: string]: any }): Promise<string> {
-        return this.send(new Message(body))
+    sendMessageWithBody(body: { [key: string]: any }, newId?: string): Promise<void> {
+        return this.send(new Message(body), newId)
     }
 
     getRoleTypeForUser(userId: string): RoleType | undefined {
@@ -228,7 +231,7 @@ export class Chat extends AbstractChat {
 
     /**
      * Update the role for a user - whether you can do this will
-     * depend on your admin level
+     * depend childOn your admin level
      * @param user to change role
      * @param roleType new role
      * @return completion

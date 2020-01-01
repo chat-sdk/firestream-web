@@ -8,4 +8,5 @@ import { Firefly } from '../firefly'
  */
 export namespace Fire {
     export const fly = Firefly.shared()
+    export const Stream = Firefly.shared()
 }

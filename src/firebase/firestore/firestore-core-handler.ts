@@ -11,7 +11,6 @@ import { Sendable } from '../../message/sendable'
 import { DataProvider, User } from '../../chat/user'
 import { Keys } from '../service/keys'
 import { Firefly } from '../../firefly'
-import { SendableType } from '../../types/sendable-types'
 import { EventType } from '../../events/event-type'
 
 export class FirestoreCoreHandler extends FirebaseCoreHandler {
@@ -30,9 +29,8 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return new RxFirestore().delete(Ref.document(messagesPath))
     }
 
-    async send(messagesPath: Path, sendable: Sendable): Promise<string> {
-        const ref = await new RxFirestore().add(Ref.collection(messagesPath), sendable.toData())
-        return ref.id
+    async send(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void> {
+        await new RxFirestore().add(Ref.collection(messagesPath), sendable.toData(), newId)
     }
 
     addUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void> {
@@ -106,7 +104,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         })
     }
 
-    async dateOfLastSendMessage(messagesPath: Path): Promise<Date> {
+    async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
         let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.where(Keys.From, '==', Firefly.shared().currentUserId())
@@ -115,12 +113,14 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
 
         const snapshot = await new RxFirestore().get(query)
 
-        const changes = snapshot.docChanges()
-        if (changes.length > 0) {
-            const change = changes[0]
-            if (change.doc.exists) {
-                const sendable = new Sendable('id', change.doc.data())
-                return sendable.getDate()
+        if (!snapshot.empty) {
+            const changes = snapshot.docChanges()
+            if (changes.length > 0) {
+                const change = changes[0]
+                if (change.doc.exists) {
+                    const sendable = new Sendable('id', change.doc.data())
+                    return sendable.getDate()
+                }
             }
         }
 

@@ -28,10 +28,11 @@ export abstract class FirebaseCoreHandler {
      * Send a message to a messages ref
      *
      * @param messagesPath Firestore reference for message collection
-     * @param sendable     item to be sent
-     * @return single containing message id
+     * @param sendable item to be sent
+     * @param newId get the id of the new message before it's sent
+     * @return completion
      */
-    abstract send(messagesPath: Path, sendable: Sendable): Promise<string>
+    abstract send(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void>
 
     /**
      * Add users to a reference
@@ -79,7 +80,7 @@ export abstract class FirebaseCoreHandler {
      * @param messagesPath
      * @return single date
      */
-    abstract dateOfLastSendMessage(messagesPath: Path): Promise<Date>
+    abstract dateOfLastSentMessage(messagesPath: Path): Promise<Date>
 
     /**
      * Start listening to the current message reference and pass the messages to the events

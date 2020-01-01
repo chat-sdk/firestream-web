@@ -27,7 +27,7 @@ export class Path {
 
     get(index: number): string | undefined {
         if (this.size() > index) {
-            return this.components[index];
+            return this.components[index]
         }
     }
 
@@ -46,6 +46,13 @@ export class Path {
 
     children(...children: string[]): Path {
         this.components.push(...children)
+        return this
+    }
+
+    removeLast(): Path {
+        if (this.components.length > 0) {
+            this.components.pop()
+        }
         return this
     }
 

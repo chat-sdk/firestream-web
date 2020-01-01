@@ -1,8 +1,10 @@
 import { Sendable } from '../message/sendable'
 import { SendableType } from '../types/sendable-types'
+import { Firefly } from '../firefly'
 
 export class MessageStreamFilter {
-    static bySendableType = (...types: SendableType[]) => {
+
+    static bySendableType(...types: SendableType[]) {
         return (sendable: Sendable) => {
             for (const type of types) {
                 if (sendable.getType() === type.get()) {
@@ -12,4 +14,9 @@ export class MessageStreamFilter {
             return false
         }
     }
+
+    static notFromMe() {
+        return (sendable: Sendable) => sendable.from !== Firefly.shared().currentUserId()
+    }
+
 }

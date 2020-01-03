@@ -1,11 +1,11 @@
-import { firestore } from 'firebase/app'
+import * as firebase from 'firebase/app'
 
 import { Path } from '../service/path'
 import { Firefly } from '../../firefly'
 
 export class Ref {
 
-    static collection(path: Path): firestore.CollectionReference {
+    static collection(path: Path): firebase.firestore.CollectionReference {
         let ref = this.db().collection(path.first())
         for (let i = 1; i < path.size(); i += 2) {
             const c1 = path.get(i)
@@ -17,11 +17,11 @@ export class Ref {
         return ref
     }
 
-    static document(path: Path): firestore.DocumentReference {
+    static document(path: Path): firebase.firestore.DocumentReference {
         return this.collection(path).doc(path.last())
     }
 
-    static db(): firestore.Firestore {
+    static db(): firebase.firestore.Firestore {
         return Firefly.shared().firebaseApp.firestore()
     }
 

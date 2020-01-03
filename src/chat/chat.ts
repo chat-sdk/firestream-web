@@ -21,6 +21,7 @@ import { TypingState } from '../message/typing-state'
 import { TextMessage } from '../message/text-message'
 import { Message } from '../message/message'
 import { MessageStreamFilter } from '../filter/message-stream-filter'
+import { Consumer } from '../interfaces/consumer'
 
 export interface ChatMeta {
     name: string
@@ -173,7 +174,7 @@ export class Chat extends AbstractChat {
         return this.id
     }
 
-    send(sendable: Sendable, newId?: string): Promise<void> {
+    send(sendable: Sendable, newId?: Consumer<string>): Promise<void> {
         return this.sendToPath(Paths.groupChatMessagesPath(this.id), sendable, newId)
     }
 
@@ -189,7 +190,7 @@ export class Chat extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: string): Promise<void> {
+    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
         return this.send(new DeliveryReceipt(type, messageId), newId)
     }
 
@@ -199,15 +200,15 @@ export class Chat extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendTypingIndicator(type: TypingStateType, newId?: string): Promise<void> {
+    sendTypingIndicator(type: TypingStateType, newId?: Consumer<string>): Promise<void> {
         return this.send(new TypingState(type), newId)
     }
 
-    sendMessageWithText(text: string, newId?: string): Promise<void> {
+    sendMessageWithText(text: string, newId?: Consumer<string>): Promise<void> {
         return this.send(new TextMessage(text), newId)
     }
 
-    sendMessageWithBody(body: { [key: string]: any }, newId?: string): Promise<void> {
+    sendMessageWithBody(body: { [key: string]: any }, newId?: Consumer<string>): Promise<void> {
         return this.send(new Message(body), newId)
     }
 

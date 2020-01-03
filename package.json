@@ -12,7 +12,7 @@
   "dependencies": {
     "firebase": "^7.6.1",
     "queueing-subject": "^0.3.4",
-    "rxjs": "^6.5.3",
+    "rxjs": "^6.5.4",
     "rxrelayjs": "^1.0.3"
   },
   "devDependencies": {

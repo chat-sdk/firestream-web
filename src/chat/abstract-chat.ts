@@ -15,6 +15,7 @@ import { DeliveryReceipt } from '../message/delivery-receipt'
 import { TypingState } from '../message/typing-state'
 import { Invitation } from '../message/invitation'
 import { Presence } from '../message/presence'
+import { Consumer } from '../interfaces/consumer'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.
@@ -121,7 +122,7 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      * @param newId the ID of the new message
      * @return single containing message id
      */
-    sendToPath(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void> {
+    sendToPath(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
         return this.core.send(messagesPath, sendable, newId)
     }
 

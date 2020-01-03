@@ -8,8 +8,9 @@ import { Paths } from '../service/paths'
 import { Path } from '../service/path'
 import { User } from '../../chat/user'
 import { Keys } from '../service/keys'
-import { IJson } from '../../interfaces/json'
 import { ChatMeta } from '../../chat/chat'
+import { IJson } from '../../interfaces/json'
+import { Consumer } from '../../interfaces/consumer'
 
 export class FirestoreChatHandler extends FirebaseChatHandler {
 
@@ -34,7 +35,7 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         }))
     }
 
-    async add(path: Path, data: IJson, newId?: string): Promise<string> {
+    async add(path: Path, data: IJson, newId?: Consumer<string>): Promise<string> {
         return new RxFirestore().add(Ref.collection(path), data, newId)
     }
 

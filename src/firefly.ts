@@ -28,6 +28,7 @@ import { SendableType } from './types/sendable-types'
 import { MessageStreamFilter } from './filter/message-stream-filter'
 import { EventType } from './events/event-type'
 import { IJson } from './interfaces/json'
+import { Consumer } from './interfaces/consumer'
 
 export class Firefly extends AbstractChat {
 
@@ -216,7 +217,7 @@ export class Firefly extends AbstractChat {
         return this.send(userId, new Invitation(type, groupId))
     }
 
-    send(toUserId: string, sendable: Sendable, newId?: string): Promise<void> {
+    send(toUserId: string, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
         return this.sendToPath(Paths.messagesPath(toUserId), sendable, newId)
     }
 
@@ -229,8 +230,8 @@ export class Firefly extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: string): Promise<void> {
-        return this.send(userId, new DeliveryReceipt(type, messageId))
+    sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
+        return this.send(userId, new DeliveryReceipt(type, messageId), newId)
     }
 
     /**
@@ -240,16 +241,16 @@ export class Firefly extends AbstractChat {
      * @param type - the status getBodyType
      * @return - subscribe to get a completion, error update from the method
      */
-    sendTypingIndicator(userId: string, type: TypingStateType): Promise<void> {
-        return this.send(userId, new TypingState(type))
+    sendTypingIndicator(userId: string, type: TypingStateType, newId?: Consumer<string>): Promise<void> {
+        return this.send(userId, new TypingState(type), newId)
     }
 
-    sendMessageWithText(userId:  string, text: string): Promise<void> {
-        return this.send(userId, new TextMessage(text))
+    sendMessageWithText(userId:  string, text: string, newId?: Consumer<string>): Promise<void> {
+        return this.send(userId, new TextMessage(text), newId)
     }
 
-    sendMessageWithBody(userId: string, body: IJson): Promise<void> {
-        return this.send(userId, new Message(body))
+    sendMessageWithBody(userId: string, body: IJson, newId?: Consumer<string>): Promise<void> {
+        return this.send(userId, new Message(body), newId)
     }
 
     //

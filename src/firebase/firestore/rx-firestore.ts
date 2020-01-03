@@ -1,11 +1,15 @@
-import { firestore } from 'firebase/app'
+import * as firebase from 'firebase/app'
+import 'firebase/firestore'
 import { Observable } from 'rxjs'
+
+import { Consumer } from '../../interfaces/consumer'
+import { Keys } from '../service/keys'
 
 export class RxFirestore {
 
     protected unsubscribe?: () => void
 
-    on(ref: firestore.DocumentReference): Observable<firestore.DocumentSnapshot> {
+    on(ref: firebase.firestore.DocumentReference): Observable<firebase.firestore.DocumentSnapshot> {
         return new Observable(emitter => {
             this.unsubscribe = ref.onSnapshot(snapshot => {
                 if (snapshot) {
@@ -15,7 +19,7 @@ export class RxFirestore {
         })
     }
 
-    onQuery(ref: firestore.Query): Observable<firestore.DocumentChange> {
+    onQuery(ref: firebase.firestore.Query): Observable<firebase.firestore.DocumentChange> {
         return new Observable(emitter => {
             this.unsubscribe = ref.onSnapshot(snapshot => {
                 if (snapshot) {
@@ -27,23 +31,26 @@ export class RxFirestore {
         })
     }
 
-    async add(ref: firestore.CollectionReference, data: firestore.DocumentData, newId?: string): Promise<string> {
-        const docRef = ref.doc(newId)
+    async add(ref: firebase.firestore.CollectionReference, data: firebase.firestore.DocumentData, newId?: Consumer<string>): Promise<string> {
+        const docRef = ref.doc()
+        if (newId) {
+            newId(docRef.id)
+        }
         await docRef.set(data)
         return docRef.id
     }
 
-    delete(ref: firestore.DocumentReference): Promise<void> {
+    delete(ref: firebase.firestore.DocumentReference): Promise<void> {
         return ref.delete()
     }
 
-    set(ref: firestore.DocumentReference, data: firestore.DocumentData): Promise<void> {
+    set(ref: firebase.firestore.DocumentReference, data: firebase.firestore.DocumentData): Promise<void> {
         return ref.set(data)
     }
 
-    get(ref: firestore.DocumentReference): Promise<firestore.DocumentSnapshot>
-    get(ref: firestore.Query): Promise<firestore.QuerySnapshot>
-    get(ref: firestore.DocumentReference | firestore.Query): Promise<firestore.DocumentSnapshot | firestore.QuerySnapshot> {
+    get(ref: firebase.firestore.DocumentReference): Promise<firebase.firestore.DocumentSnapshot>
+    get(ref: firebase.firestore.Query): Promise<firebase.firestore.QuerySnapshot>
+    get(ref: firebase.firestore.DocumentReference | firebase.firestore.Query): Promise<firebase.firestore.DocumentSnapshot | firebase.firestore.QuerySnapshot> {
         return ref.get()
     }
 

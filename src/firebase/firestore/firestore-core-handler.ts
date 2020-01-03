@@ -1,4 +1,4 @@
-import { firestore } from 'firebase/app'
+import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
 import { map, filter } from 'rxjs/operators'
 
@@ -12,6 +12,7 @@ import { DataProvider, User } from '../../chat/user'
 import { Keys } from '../service/keys'
 import { Firefly } from '../../firefly'
 import { EventType } from '../../events/event-type'
+import { Consumer } from '../../interfaces/consumer'
 
 export class FirestoreCoreHandler extends FirebaseCoreHandler {
 
@@ -29,7 +30,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return new RxFirestore().delete(Ref.document(messagesPath))
     }
 
-    async send(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void> {
+    async send(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
         await new RxFirestore().add(Ref.collection(messagesPath), sendable.toData(), newId)
     }
 
@@ -70,7 +71,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<Sendable> {
-        let query = Ref.collection(messagesPath) as firestore.Query
+        let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
         if (fromDate) {
@@ -105,7 +106,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
-        let query = Ref.collection(messagesPath) as firestore.Query
+        let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.where(Keys.From, '==', Firefly.shared().currentUserId())
         query = query.orderBy(Keys.Date, 'desc')
@@ -133,7 +134,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @return a events of message results
      */
     messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<Sendable> {
-        let query = Ref.collection(messagesPath) as firestore.Query
+        let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
         if (newerThan) {
@@ -153,8 +154,11 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             .pipe(filter(s => !!s)) as Observable<Sendable>
     }
 
-    timestamp(): firestore.FieldValue {
-        return firestore.FieldValue.serverTimestamp()
+    timestamp() {
+        // TODO: This should return firebase.firestore.FieldValue.serverTimestamp().
+        // At the monent this would cause an exeption when trying to push data (including the timestamp)
+        // to Firestotre: `DocumentReference.set({ date: firebase.firestore.FieldValue.serverTimestamp() })`
+        return new Date()
     }
 
     /**
@@ -166,11 +170,11 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @param batch Firestore batch
      * @return completion
      */
-    protected runBatch(batch: firestore.WriteBatch): Promise<void> {
+    protected runBatch(batch: firebase.firestore.WriteBatch): Promise<void> {
         return batch.commit()
     }
 
-    static typeForDocumentChange(change: firestore.DocumentChange): EventType {
+    static typeForDocumentChange(change: firebase.firestore.DocumentChange): EventType {
         switch (change.type) {
             case 'added':
                 return EventType.Added

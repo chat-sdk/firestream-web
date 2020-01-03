@@ -1,10 +1,11 @@
-import { firestore } from 'firebase/app'
+import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
 
 import { Path } from './path'
 import { ListEvent } from '../../events/list-event'
 import { Sendable } from '../../message/sendable'
 import { DataProvider, User } from '../../chat/user'
+import { Consumer } from '../../interfaces/consumer'
 
 export abstract class FirebaseCoreHandler {
 
@@ -32,7 +33,7 @@ export abstract class FirebaseCoreHandler {
      * @param newId get the id of the new message before it's sent
      * @return completion
      */
-    abstract send(messagesPath: Path, sendable: Sendable, newId?: string): Promise<void>
+    abstract send(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void>
 
     /**
      * Add users to a reference
@@ -95,6 +96,6 @@ export abstract class FirebaseCoreHandler {
      * Return a Firebase timestamp object
      * @return appropriate server timestamp object
      */
-    abstract timestamp(): firestore.FieldValue
+    abstract timestamp(): any
 
 }

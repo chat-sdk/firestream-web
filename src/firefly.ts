@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, BehaviorSubject } from 'rxjs'
 
 import { Config, DatabaseType } from './config'
 import { AbstractChat } from './chat/abstract-chat'
@@ -29,6 +29,7 @@ import { MessageStreamFilter } from './filter/message-stream-filter'
 import { EventType } from './events/event-type'
 import { IJson } from './interfaces/json'
 import { Consumer } from './interfaces/consumer'
+import { ConnectionEvent } from './events/connection-event'
 
 export class Firefly extends AbstractChat {
 
@@ -43,6 +44,8 @@ export class Firefly extends AbstractChat {
     protected chatEvents = new MultiQueueSubject<ChatEvent>()
     protected contactEvents = new MultiQueueSubject<UserEvent>()
     protected blockedEvents = new MultiQueueSubject<UserEvent>()
+
+    protected connectionEvents = new BehaviorSubject<ConnectionEvent>(((null as unknown) as ConnectionEvent))
 
     protected firebaseService?: FirebaseService
 
@@ -106,6 +109,8 @@ export class Firefly extends AbstractChat {
             throw new Error('Firebase must be authenticated to connect')
         }
 
+        this.connectionEvents.next(ConnectionEvent.willConnect())
+
         // MESSAGE DELETION
 
         // We always delete typing state and presence messages
@@ -124,7 +129,7 @@ export class Firefly extends AbstractChat {
             try {
                 // If delivery receipts are enabled, send the delivery receipt
                 if (this.config.deliveryReceiptsEnabled) {
-                    await this.sendDeliveryReceipt(message.from, DeliveryReceiptType.received(), message.id)
+                    await this.markReceived(message)
                 }
                 // If message deletion is disabled, instead mark the message as received. This means
                 // that when we add a listener, we only get new messages
@@ -195,6 +200,12 @@ export class Firefly extends AbstractChat {
 
         // Connect to the message events AFTER we have added our events listeners
         await super.connect()
+    }
+
+    disconnect() {
+        this.connectionEvents.next(ConnectionEvent.willDisconnect())
+        super.disconnect()
+        this.connectionEvents.next(ConnectionEvent.didDisconnect())
     }
 
     currentUserId(): string | undefined {
@@ -320,6 +331,22 @@ export class Firefly extends AbstractChat {
         return this.chats
     }
 
+    /**
+     * Send a read receipt
+     * @return completion
+     */
+    markRead(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(message.from, DeliveryReceiptType.read(), message.id)
+    }
+
+    /**
+     * Send a received receipt
+     * @return completion
+     */
+    markReceived(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(message.from, DeliveryReceiptType.received(), message.id)
+    }
+
     //
     // Events
     //
@@ -361,6 +388,10 @@ export class Firefly extends AbstractChat {
             throw new Error('Firefly needs to be initialized!')
         }
         return this.firebaseService
+    }
+
+    getConnectionEvents(): Observable<ConnectionEvent> {
+        return this.connectionEvents.asObservable()
     }
 
 }

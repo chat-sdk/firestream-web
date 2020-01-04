@@ -257,4 +257,7 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      */
     protected abstract messagesPath(): Path
 
+    abstract markRead(message: Message): Promise<void>
+    abstract markReceived(message: Message): Promise<void>
+
 }

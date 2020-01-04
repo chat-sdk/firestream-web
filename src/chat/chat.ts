@@ -52,7 +52,6 @@ export class Chat extends AbstractChat {
     }
 
     async connect(): Promise<void> {
-        this.disconnect()
 
         console.log('Connect to chat:', this.id)        
 
@@ -62,9 +61,7 @@ export class Chat extends AbstractChat {
                     .getMessages()
                     .allEvents()
                     .pipe(filter(MessageStreamFilter.notFromMe()))
-                    .pipe(flatMap(message => {
-                        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
-                    }))
+                    .pipe(flatMap(this.markReceived))
                     .subscribe(this))
         }
 
@@ -192,6 +189,14 @@ export class Chat extends AbstractChat {
      */
     sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
         return this.send(new DeliveryReceipt(type, messageId), newId)
+    }
+
+    markReceived(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
+    }
+
+    markRead(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.id)
     }
 
     /**

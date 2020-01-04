@@ -60,7 +60,7 @@ export class Chat extends AbstractChat {
         if (this.config.deliveryReceiptsEnabled) {
             this.dl.add(this.getEvents()
                     .getMessages()
-                    .pastAndNewEvents()
+                    .allEvents()
                     .pipe(filter(MessageStreamFilter.notFromMe()))
                     .pipe(flatMap(message => {
                         return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
@@ -250,7 +250,7 @@ export class Chat extends AbstractChat {
     }
 
     getUserEventStream(): Observable<UserEvent> {
-        return this.userEvents
+        return this.userEvents.allEvents()
     }
 
     getUsers(): User[] {

@@ -33,8 +33,8 @@ export class Events {
      * to avoid a naming clash
      * @return events of messages
      */
-    getFireflyMessages(): Observable<FireflyMessage> {
-        return this.messages.pipe(map(FireflyMessage.fromMessage))
+    getFireflyMessages(): MultiQueueSubject<FireflyMessage> {
+        return this.messages.map(FireflyMessage.fromMessage)
     }
 
     /**
@@ -42,7 +42,7 @@ export class Events {
      * @return
      */
     getErrors(): Observable<Error> {
-        return this.errors
+        return this.errors.asObservable()
     }
 
     getDeliveryReceipts(): MultiQueueSubject<DeliveryReceipt> {

@@ -109,7 +109,7 @@ export class Firefly extends AbstractChat {
         // MESSAGE DELETION
 
         // We always delete typing state and presence messages
-        let stream$ = this.getEvents().getSendables().pastAndNewEvents()
+        let stream$ = this.getEvents().getSendables().allEvents()
         if (!this.config.deleteMessagesOnReceipt) {
             stream$ = stream$.pipe(
                 filter(MessageStreamFilter.bySendableType(SendableType.typingState(), SendableType.presence()))
@@ -120,7 +120,7 @@ export class Firefly extends AbstractChat {
 
         // DELIVERY RECEIPTS
 
-        this.dl.add(this.getEvents().getMessages().pastAndNewEvents().subscribe(async message => {
+        this.dl.add(this.getEvents().getMessages().allEvents().subscribe(async message => {
             try {
                 // If delivery receipts are enabled, send the delivery receipt
                 if (this.config.deliveryReceiptsEnabled) {
@@ -138,7 +138,7 @@ export class Firefly extends AbstractChat {
 
         // INVITATIONS
 
-        this.dl.add(this.getEvents().getInvitations().pastAndNewEvents().pipe(flatMap(invitation => {
+        this.dl.add(this.getEvents().getInvitations().allEvents().pipe(flatMap(invitation => {
             if (this.config.autoAcceptChatInvite) {
                 return invitation.accept()
             }
@@ -324,15 +324,15 @@ export class Firefly extends AbstractChat {
     // Events
     //
 
-    getChatEvents(): Observable<ChatEvent> {
+    getChatEvents(): MultiQueueSubject<ChatEvent> {
         return this.chatEvents
     }
 
-    getBlockedEvents(): Observable<UserEvent> {
+    getBlockedEvents(): MultiQueueSubject<UserEvent> {
         return this.blockedEvents
     }
 
-    getContactEvents(): Observable<UserEvent> {
+    getContactEvents(): MultiQueueSubject<UserEvent> {
         return this.contactEvents
     }
 

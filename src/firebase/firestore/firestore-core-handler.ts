@@ -10,7 +10,7 @@ import { Ref } from './ref'
 import { Sendable } from '../../message/sendable'
 import { DataProvider, User } from '../../chat/user'
 import { Keys } from '../service/keys'
-import { Firefly } from '../../firefly'
+import { FireStream } from '../../firestream'
 import { EventType } from '../../events/event-type'
 import { Consumer } from '../../interfaces/consumer'
 
@@ -108,7 +108,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
-        query = query.where(Keys.From, '==', Firefly.shared().currentUserId())
+        query = query.where(Keys.From, '==', FireStream.shared().currentUserId())
         query = query.orderBy(Keys.Date, 'desc')
         query = query.limit(1)
 

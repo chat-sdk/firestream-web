@@ -5,7 +5,7 @@ import { ListEvent } from './list-event'
 import { Keys } from '../firebase/service/keys'
 import { RoleType } from '../types/role-type'
 import { ContactType } from '../types/contact-type'
-import { FireflyUser } from '../namespace/firefly-user'
+import { FireStreamUser } from '../namespace/firestream-user'
 
 export class UserEvent extends Event {
 
@@ -38,8 +38,8 @@ export class UserEvent extends Event {
         return new UserEvent(new User(listEvent.id), listEvent.type)
     }
 
-    getFireflyUser(): FireflyUser {
-        return FireflyUser.fromUser(this.user)
+    getFireStreamUser(): FireStreamUser {
+        return FireStreamUser.fromUser(this.user)
     }
 
 }

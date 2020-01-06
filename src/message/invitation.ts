@@ -1,7 +1,7 @@
 import { Sendable } from './sendable'
 import { SendableType } from '../types/sendable-types'
 import { InvitationType } from '../types/invitation-type'
-import { Firefly } from '../firefly'
+import { FireStream } from '../firestream'
 
 export class Invitation extends Sendable {
 
@@ -27,7 +27,7 @@ export class Invitation extends Sendable {
     async accept(): Promise<void> {
         if (this.getBodyType().equals(InvitationType.chat())) {
             try {
-                return Firefly.shared().joinChat(this.getChatId())
+                return FireStream.shared().joinChat(this.getChatId())
             } catch (err) {
                 throw err
             }

@@ -8,7 +8,7 @@ import { DeliveryReceipt } from '../message/delivery-receipt'
 import { TypingState } from '../message/typing-state'
 import { Presence } from '../message/presence'
 import { Invitation } from '../message/invitation'
-import { FireflyMessage } from '../namespace/firefly-message'
+import { FireStreamMessage } from '../namespace/firestream-message'
 
 export class Events {
 
@@ -27,14 +27,14 @@ export class Events {
     }
 
     /**
-     * A Firefly Message is no different from a Message. The reason this method
+     * A FireStreamMessage is no different from a Message. The reason this method
      * exists is because Message is a very common class name. If for any reason
-     * your project already has a Message object, you can use the FireflyMessage
+     * your project already has a Message object, you can use the FireStreamMessage
      * to avoid a naming clash
      * @return events of messages
      */
-    getFireflyMessages(): MultiQueueSubject<FireflyMessage> {
-        return this.messages.map(FireflyMessage.fromMessage)
+    getFireStreamMessages(): MultiQueueSubject<FireStreamMessage> {
+        return this.messages.map(FireStreamMessage.fromMessage)
     }
 
     /**

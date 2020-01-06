@@ -31,9 +31,9 @@ import { IJson } from './interfaces/json'
 import { Consumer } from './interfaces/consumer'
 import { ConnectionEvent } from './events/connection-event'
 
-export class Firefly extends AbstractChat {
+export class FireStream extends AbstractChat {
 
-    private static instance: Firefly
+    private static instance: FireStream
 
     private fbApp?: firebase.app.App
     private user?: firebase.User
@@ -51,7 +51,7 @@ export class Firefly extends AbstractChat {
 
     static shared() {
         if (!this.instance) {
-            this.instance = new Firefly()
+            this.instance = new FireStream()
         }
         return this.instance
     }
@@ -90,7 +90,7 @@ export class Firefly extends AbstractChat {
 
     get firebaseApp(): firebase.app.App {
         if (!this.fbApp) {
-            throw new Error('Firefly needs to be initialized!')
+            throw new Error('FireStream needs to be initialized!')
         }
         return this.fbApp
     }
@@ -385,7 +385,7 @@ export class Firefly extends AbstractChat {
 
     getFirebaseService(): FirebaseService {
         if (!this.firebaseService) {
-            throw new Error('Firefly needs to be initialized!')
+            throw new Error('FireStream needs to be initialized!')
         }
         return this.firebaseService
     }
@@ -397,4 +397,4 @@ export class Firefly extends AbstractChat {
 }
 
 export { Fire } from './namespace/fire'
-export { Fl } from './namespace/fl'
+export { F } from './namespace/f'

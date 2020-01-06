@@ -3,7 +3,7 @@ import { Observable, ErrorObserver } from 'rxjs'
 import { FirebaseCoreHandler } from '../firebase/service/firebase-core-handler'
 import { DisposableList } from '../firebase/rx/disposable-list'
 import { Path } from '../firebase/service/path'
-import { Firefly } from '../firefly'
+import { FireStream } from '../firestream'
 import { Config } from '../config'
 import { User, DataProvider } from './user'
 import { Events } from './events'
@@ -48,7 +48,7 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      * initialized and throw an error if not
      */
     get core(): FirebaseCoreHandler {
-        const core = Firefly.shared().getFirebaseService().core
+        const core = FireStream.shared().getFirebaseService().core
         if (!core) {
             throw new Error('FirebaseCoreHandler is undefined')
         }

@@ -30,16 +30,16 @@ export class Config {
     messageHistoryLimit = 100
 
     /**
-     * This will be the root of the Firefly Firebase database i.e.
+     * This will be the root of the FireStream Firebase database i.e.
      * /root/[sandbox]/users
      */
     root = 'pepe'
 
     /**
-     * This will be the sandbox of the Firefly Firebase database i.e.
+     * This will be the sandbox of the FireStream Firebase database i.e.
      * /root/[sandbox]/users
      */
-    sandbox = 'firefly'
+    sandbox = 'firestream'
 
     /**
      * Which database to use - Firestore or Realtime database

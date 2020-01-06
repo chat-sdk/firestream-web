@@ -1,4 +1,4 @@
-import { Firefly } from '../firefly'
+import { FireStream } from '../firestream'
 import { Keys } from '../firebase/service/keys'
 import { BaseType } from '../types/base-type'
 import { BaseMessage } from './base-message'
@@ -12,11 +12,11 @@ export class Sendable extends BaseMessage {
         super()
 
         if (!id || !data) {
-            const uid = Firefly.shared().currentUserId()
+            const uid = FireStream.shared().currentUserId()
             if (uid) {
                 this.from = uid
             } else {
-                console.error(new Error('Firefly.shared().currentUserId() returned undefined'))
+                console.error(new Error('FireStream.shared().currentUserId() returned undefined'))
             }
             return
         }
@@ -69,7 +69,7 @@ export class Sendable extends BaseMessage {
         const data = {
             [Keys.From]: this.from,
             [Keys.Body]: this.body,
-            [Keys.Date]: Firefly.shared().getFirebaseService().core.timestamp(),
+            [Keys.Date]: FireStream.shared().getFirebaseService().core.timestamp(),
             [Keys.Type]: this.type,
         }
         return data

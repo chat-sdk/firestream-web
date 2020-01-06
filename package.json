@@ -1,21 +1,21 @@
 {
-  "name": "firefly",
+  "name": "firestream",
   "version": "0.1.0",
   "description": "",
   "keywords": [],
   "license": "ISC",
   "author": "Pepe Becker <pepe@chatsdk.co> (https://chatsdk.co)",
-  "main": "dist/firefly.js",
+  "main": "dist/firestream.js",
   "scripts": {
+    "start": "onchange 'src/**/*.ts' -- npm run build",
     "build": "tsc"
   },
   "dependencies": {
     "firebase": "^7.6.1",
-    "queueing-subject": "^0.3.4",
-    "rxjs": "^6.5.4",
-    "rxrelayjs": "^1.0.3"
+    "rxjs": "^6.5.4"
   },
   "devDependencies": {
+    "onchange": "^6.1.0",
     "typescript": "^3.7.4",
     "typings": "^2.1.1"
   }

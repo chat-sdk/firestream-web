@@ -1,7 +1,7 @@
 import * as firebase from 'firebase/app'
 
 import { Path } from '../service/path'
-import { Firefly } from '../../firefly'
+import { FireStream } from '../../firestream'
 
 export class Ref {
 
@@ -22,7 +22,7 @@ export class Ref {
     }
 
     static db(): firebase.firestore.Firestore {
-        return Firefly.shared().firebaseApp.firestore()
+        return FireStream.shared().firebaseApp.firestore()
     }
 
 }

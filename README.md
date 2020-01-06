@@ -1,12 +1,13 @@
-# Firefly Web
+# FireStream JS
 
-## Initializing Firefly with Firebase App
+## Initializing FireStream with Firebase App
 ```js
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
-import { Fl } from 'firefly'
+import 'firebase/firestore'
+import { Fire } from 'firestream'
 
 const app = firebase.initializeApp({ /* firebaseConfig */ })
 
-Fl.y.initialize(app)
+Fire.Stream.initialize(app)
 ```

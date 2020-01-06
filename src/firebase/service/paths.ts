@@ -1,11 +1,11 @@
 import { Keys } from './keys'
 import { Path } from './path'
-import { Firefly } from '../../firefly'
+import { FireStream } from '../../firestream'
 
 export class Paths extends Keys {
 
     static root(): Path {
-        return new Path([Firefly.shared().getConfig().root, Firefly.shared().getConfig().sandbox])
+        return new Path([FireStream.shared().getConfig().root, FireStream.shared().getConfig().sandbox])
     }
 
     static usersPath(): Path {
@@ -39,7 +39,7 @@ export class Paths extends Keys {
     }
 
     protected static currentUserId(): string {
-        const uid = Firefly.shared().currentUserId()
+        const uid = FireStream.shared().currentUserId()
         if (!uid) {
             throw new Error('User not authenticated')
         }

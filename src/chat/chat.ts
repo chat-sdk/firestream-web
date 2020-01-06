@@ -10,12 +10,12 @@ import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Sendable } from '../message/sendable'
 import { Paths } from '../firebase/service/paths'
 import { EventType } from '../events/event-type'
-import { Firefly } from '../firefly'
+import { FireStream } from '../firestream'
 import { Keys } from '../firebase/service/keys'
 import { Path } from '../firebase/service/path'
 import { RoleType } from '../types/role-type'
 import { InvitationType } from '../types/invitation-type'
-import { FireflyUser } from '../namespace/firefly-user'
+import { FireStreamUser } from '../namespace/firestream-user'
 import { TypingStateType } from '../types/typing-state-type'
 import { TypingState } from '../message/typing-state'
 import { TextMessage } from '../message/text-message'
@@ -77,7 +77,7 @@ export class Chat extends AbstractChat {
         }, this.error))
 
         // Handle name and image change
-        const chatHandler = Firefly.shared().getFirebaseService().chat
+        const chatHandler = FireStream.shared().getFirebaseService().chat
         this.dl.add(chatHandler.metaOn(Paths.groupChatMetaPath(this.id)).subscribe(meta => {
             if (!meta) return
             let newName = meta.name
@@ -102,7 +102,7 @@ export class Chat extends AbstractChat {
     static async create(name: string, avatarURL: string, users: User[]): Promise<Chat> {
         const meta: { [key: string]: any } = {}
 
-        meta[Keys.Created] = Firefly.shared().core!.timestamp()
+        meta[Keys.Created] = FireStream.shared().core!.timestamp()
         if (name) {
             meta[Keys.Name] = name
         }
@@ -113,7 +113,7 @@ export class Chat extends AbstractChat {
         const data: { [key: string]: any } = {}
         data[Keys.Meta] = meta
 
-        const chatId = await Firefly.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
+        const chatId = await FireStream.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
         const groupChat = new Chat(chatId)
         const usersToAdd = Array<User>()
         for (const user of users) {
@@ -131,7 +131,7 @@ export class Chat extends AbstractChat {
         const promises = new Array<Promise<void>>()
         for (const user of users) {
             if (!user.isMe()) {
-                promises.push(Firefly.shared().sendInvitation(user.id, InvitationType.chat(), this.id).then())
+                promises.push(FireStream.shared().sendInvitation(user.id, InvitationType.chat(), this.id).then())
             }
         }
         await Promise.all(promises)
@@ -270,12 +270,12 @@ export class Chat extends AbstractChat {
         return this.avatarURLStream
     }
 
-    getFireflyUsers(): Array<FireflyUser> {
-        const fireflyUsers = new Array<FireflyUser>()
+    getFireStreamUsers(): Array<FireStreamUser> {
+        const firestreamUsers = new Array<FireStreamUser>()
         for (const user of this.users) {
-            fireflyUsers.push(FireflyUser.fromUser(user))
+            firestreamUsers.push(FireStreamUser.fromUser(user))
         }
-        return fireflyUsers
+        return firestreamUsers
     }
 
 }

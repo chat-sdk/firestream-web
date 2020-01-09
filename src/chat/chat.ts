@@ -11,7 +11,6 @@ import { Sendable } from '../message/sendable'
 import { Paths } from '../firebase/service/paths'
 import { EventType } from '../events/event-type'
 import { FireStream } from '../firestream'
-import { Keys } from '../firebase/service/keys'
 import { Path } from '../firebase/service/path'
 import { RoleType } from '../types/role-type'
 import { InvitationType } from '../types/invitation-type'
@@ -23,24 +22,31 @@ import { Message } from '../message/message'
 import { MessageStreamFilter } from '../filter/message-stream-filter'
 import { Consumer } from '../interfaces/consumer'
 import { IJson } from '../interfaces/json'
+import { IChat } from '../interfaces/chat'
+import { Meta } from './meta'
 
-export class Chat extends AbstractChat {
+export class Chat extends AbstractChat implements IChat {
 
     protected id: string
     protected joined?: Date
-    protected meta = new Chat.Meta()
+    protected meta = new Meta()
 
     protected users = new Array<User>()
     protected userEvents = new MultiQueueSubject<UserEvent>()
 
-    protected nameStream = new BehaviorSubject<string>('')
-    protected imageURLStream = new BehaviorSubject<string>('')
+    protected nameChangedEvents = new BehaviorSubject<string>('')
+    protected imageURLChangedEvents = new BehaviorSubject<string>('')
+    protected customDataChangedEvents = new BehaviorSubject<IJson>({})
 
-    constructor(id: string, joined?: Date, meta?: Chat.Meta) {
+    constructor(id: string, joined?: Date, meta?: Meta) {
         super()
         this.id = id
         this.joined = joined || this.joined
         this.meta = meta || this.meta
+    }
+
+    getId(): string {
+        return this.id
     }
 
     async connect(): Promise<void> {
@@ -72,73 +78,103 @@ export class Chat extends AbstractChat {
         const chatHandler = FireStream.shared().getFirebaseService().chat
         this.sm.add(chatHandler.metaOn(Paths.chatMetaPath(this.id)).subscribe(newMeta => {
             if (!newMeta) return
-            if (newMeta.name && newMeta.name != this.meta.name) {
-                this.meta.name = newMeta.name
-                this.nameStream.next(newMeta.name)
+            if (newMeta.getName() && newMeta.getName() != this.meta.getName()) {
+                this.meta.setName(newMeta.getName())
+                this.nameChangedEvents.next(newMeta.getName())
             }
-            if (newMeta.imageURL && newMeta.imageURL != this.meta.imageURL) {
-                this.meta.imageURL = newMeta.imageURL
-                this.imageURLStream.next(newMeta.imageURL)
+            if (newMeta.getImageURL() && newMeta.getImageURL() != this.meta.getImageURL()) {
+                this.meta.setImageURL(newMeta.getImageURL())
+                this.imageURLChangedEvents.next(newMeta.getImageURL())
             }
-            this.meta.created = newMeta.created || this.meta.created
+            this.meta.setCreated(newMeta.getCreated() || this.meta.getCreated())
         }, this.error))
 
         await super.connect()
     }
 
-    messagesPath(): Path {
-        return Paths.chatMessagesPath(this.id)
+    leave(): Promise<void> {
+        return this.removeUser(User.currentUser()).then(this.disconnect)
     }
 
-    async setName(name: string): Promise<void> {
-        if (this.meta.name === name) {
-            return Promise.resolve()
+    getName(): string {
+        return this.meta.getName()
+    }
+
+    getCustomData(): IJson {
+        return this.meta.getData();
+    }
+
+    async setCustomData(data: IJson): Promise<void> {
+        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
+            throw this.adminPermissionRequired()
         } else {
             const newMeta = this.meta.copy()
-            newMeta.name = name
-            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
-            this.meta.name = name
+            newMeta.setData(data)
+            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData())
+            this.meta.setData(data)
         }
     }
 
-    setImageURL(url: string): Promise<void> {
-        if (this.meta.imageURL === url) {
-            return Promise.resolve()
-        } else {
+    async setName(name: string): Promise<void> {
+        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
+            throw this.adminPermissionRequired()
+        } else if (this.meta.getName() !== name) {
             const newMeta = this.meta.copy()
-            newMeta.imageURL = url
+            newMeta.setName(name)
+            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
+            this.meta.setName(name)
+        }
+    }
+
+    getImageURL(): string {
+        return this.meta.getImageURL()
+    }
+
+    async setImageURL(url: string): Promise<void> {
+        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
+            throw this.adminPermissionRequired()
+        } else if (this.meta.getImageURL() !== url) {
+            const newMeta = this.meta.copy()
+            newMeta.setImageURL(url)
             return FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
         }
     }
 
-    static async create(name: string, imageURL: string, users: User[]): Promise<Chat> {
-        const data = Chat.Meta.with(name, imageURL).toData(true)
-        const chatId = await FireStream.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
-        const chat = new Chat(chatId, undefined, new Chat.Meta(name, imageURL))
-
-        // Make sure the current user is the owner
-        const usersToAdd = users.filter(user => !user.equals(User.currentUser()))
-        usersToAdd.push(User.currentUser(RoleType.owner()))
-
-        await chat.addUsers(usersToAdd)
-        await chat.inviteUsers(users)
-        return chat
+    getUsers(): User[] {
+        return this.users
     }
 
-    async inviteUsers(users: User[]): Promise<void> {
-        const promises = new Array<Promise<void>>()
-        for (const user of users) {
-            if (!user.isMe()) {
-                promises.push(FireStream.shared().sendInvitation(user.id, InvitationType.chat(), this.id).then())
-            }
+    getFireStreamUsers(): Array<FireStreamUser> {
+        const firestreamUsers = new Array<FireStreamUser>()
+        for (const user of this.users) {
+            firestreamUsers.push(FireStreamUser.fromUser(user))
         }
-        await Promise.all(promises)
+        return firestreamUsers
     }
 
-    addUsers(users: User[]): Promise<void>
+    addUser(sendInvite: boolean, user: User): Promise<void>
+    addUser(path: Path, dataProvider: DataProvider, user: User): Promise<void>
+    async addUser(arg1: boolean | Path, arg2: User | DataProvider, arg3?: User): Promise<void> {
+        if (typeof arg1 === 'boolean' && arg2 instanceof User) {
+            return this.addUsers(arg1, [arg2])
+        } else if (arg1 instanceof Path && !(arg2 instanceof User) && arg3 instanceof User) {
+            return super.addUser(arg1, arg2, arg3)
+        }
+    }
+
+    addUsers(sendInvite: boolean, users: User[]): Promise<void>
     addUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void>
-    addUsers(arg1: Path | User[], arg2?: DataProvider, arg3?: User[]): Promise<void> {
-        return super.addUsers(Paths.chatUsersPath(this.id), User.roleTypeDataProvider(),  arg3 || (arg1 as User[]))
+    async addUsers(arg1: boolean | Path, arg2?: User[] | DataProvider, arg3?: User[]): Promise<void> {
+        if (typeof arg1 === 'boolean' && Array.isArray(arg2)) {
+            await super.addUsers(Paths.chatUsersPath(this.id), User.roleTypeDataProvider(), arg2)
+            if (arg1) {
+                this.inviteUsers(arg2)
+            }
+            this.users.push(...arg2)
+        }
+         else if (typeof arg1 !== 'boolean' && arg2 && !Array.isArray(arg2) && arg3) {
+            return super.addUsers(arg1, arg2, arg3)
+        }
     }
 
     updateUser(user: User): Promise<void>
@@ -165,62 +201,14 @@ export class Chat extends AbstractChat {
         return super.removeUsers(Paths.chatUsersPath(this.id), arg2 || (arg1 as User[]))
     }
 
-    getId(): string {
-        return this.id
-    }
-
-    send(sendable: Sendable, newId?: Consumer<string>): Promise<void> {
-        return this.sendToPath(Paths.chatMessagesPath(this.id), sendable, newId)
-    }
-
-    leave(): Promise<void> {
-        return this.removeUser(User.currentUser()).then(this.disconnect)
-    }
-
-    /**
-     * Send a delivery receipt to a user. If delivery receipts are enabled,
-     * a 'received' status will be returned as soon as a message is delivered
-     * and then you can then manually send a 'read' status when the user
-     * actually reads the message
-     * @param type - the status getBodyType
-     * @return - subscribe to get a completion, error update from the method
-     */
-    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
-        return this.send(new DeliveryReceipt(type, messageId), newId)
-    }
-
-    markReceived(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
-    }
-
-    markRead(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.id)
-    }
-
-    /**
-     * Send a typing indicator update to a user. This should be sent when the user
-     * starts or stops typing
-     * @param type - the status getBodyType
-     * @return - subscribe to get a completion, error update from the method
-     */
-    sendTypingIndicator(type: TypingStateType, newId?: Consumer<string>): Promise<void> {
-        return this.send(new TypingState(type), newId)
-    }
-
-    sendMessageWithText(text: string, newId?: Consumer<string>): Promise<void> {
-        return this.send(new TextMessage(text), newId)
-    }
-
-    sendMessageWithBody(body: { [key: string]: any }, newId?: Consumer<string>): Promise<void> {
-        return this.send(new Message(body), newId)
-    }
-
-    getRoleTypeForUser(userId: string): RoleType | undefined {
-        for (const user of this.users) {
-            if (user.id === userId) {
-                return user.roleType
+    async inviteUsers(users: User[]): Promise<void> {
+        const promises = new Array<Promise<void>>()
+        for (const user of users) {
+            if (!user.isMe()) {
+                promises.push(FireStream.shared().sendInvitation(user.id, InvitationType.chat(), this.id).then())
             }
         }
+        await Promise.all(promises)
     }
 
     getUsersForRoleType(roleType: RoleType): User[] {
@@ -233,16 +221,66 @@ export class Chat extends AbstractChat {
         return result
     }
 
-    /**
-     * Update the role for a user - whether you can do this will
-     * depend childOn your admin level
-     * @param user to change role
-     * @param roleType new role
-     * @return completion
-     */
     setRole(user: User, roleType: RoleType): Promise<void> {
         user.roleType = roleType
         return this.updateUser(user)
+    }
+
+    getRoleTypeForUser(theUser: User): RoleType {
+        for (const user of this.users) {
+            if (user.equals(theUser) && user.roleType) {
+                return user.roleType
+            }
+        }
+        return RoleType.none()
+    }
+
+    getNameChangeEvents(): Observable<string> {
+        return this.nameChangedEvents.asObservable()
+    }
+
+    getImageURLChangeEvents(): Observable<string> {
+        return this.imageURLChangedEvents.asObservable()
+    }
+
+    getCustomDataChangedEvents(): Observable<IJson> {
+        return this.customDataChangedEvents.asObservable()
+    }
+
+    getUserEvents(): MultiQueueSubject<UserEvent> {
+        return this.userEvents
+    }
+
+    sendMessageWithBody(body: { [key: string]: any }, newId?: Consumer<string>): Promise<void> {
+        return this.send(new Message(body), newId)
+    }
+
+    sendMessageWithText(text: string, newId?: Consumer<string>): Promise<void> {
+        return this.send(new TextMessage(text), newId)
+    }
+
+    sendTypingIndicator(type: TypingStateType, newId?: Consumer<string>): Promise<void> {
+        return this.send(new TypingState(type), newId)
+    }
+
+    sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
+        return this.send(new DeliveryReceipt(type, messageId), newId)
+    }
+
+    send(sendable: Sendable, newId?: Consumer<string>): Promise<void> {
+        return this.sendToPath(Paths.chatMessagesPath(this.id), sendable, newId)
+    }
+
+    markReceived(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
+    }
+
+    markRead(message: Message): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.id)
+    }
+
+    protected getMyRoleType(): RoleType {
+        return this.getRoleTypeForUser(FireStream.shared().currentUser())
     }
 
     equals(chat: any): boolean {
@@ -252,83 +290,42 @@ export class Chat extends AbstractChat {
         return false
     }
 
-    getUserEventStream(): Observable<UserEvent> {
-        return this.userEvents.allEvents()
-    }
-
-    getUsers(): User[] {
-        return this.users
-    }
-
-    getNameStream(): Observable<string> {
-        return this.nameStream
-    }
-
-    getImageURLStream(): Observable<string> {
-        return this.imageURLStream
-    }
-
-    getFireStreamUsers(): Array<FireStreamUser> {
-        const firestreamUsers = new Array<FireStreamUser>()
-        for (const user of this.users) {
-            firestreamUsers.push(FireStreamUser.fromUser(user))
-        }
-        return firestreamUsers
-    }
-
-    getName(): string | undefined {
-        return this.meta.name
-    }
-
-    getImageURL(): string | undefined {
-        return this.meta.imageURL
+    protected setMeta(meta: Meta) {
+        this.meta = meta
     }
 
     path(): Path {
         return Paths.chatPath(this.id)
     }
 
-    protected setMeta(meta: Chat.Meta) {
-        this.meta = meta
+    protected messagesPath(): Path {
+        return Paths.chatMessagesPath(this.id)
     }
 
-}
-
-export namespace Chat {
-    export class Meta {
-        name?: string
-        imageURL?: string
-        created?: Date
-
-        constructor(name?: string, imageURL?: string, created?: Date) {
-            this.name = name
-            this.imageURL = imageURL
-            this.created = created
-        }
-
-        toData(includeTimestamp: boolean): IJson {
-            const data: IJson = {}
-
-            data[Keys.Name] = name
-            data[Keys.ImageURL] = this.imageURL
-
-            if (includeTimestamp) {
-                data[Keys.Created] = FireStream.shared().getFirebaseService().core.timestamp()
-            }
-
-            const meta: IJson = {
-                [Keys.Meta]: data
-            }
-
-            return meta
-        }
-
-        copy(): Meta {
-            return new Meta(this.name, this.imageURL, this.created)
-        }
-
-        static with(name: string, imageURL: string): Meta {
-            return new Meta(name, imageURL)
-        }
+    protected ownerPermissionRequired(): Error {
+        return new Error('owner_permission_required')
     }
+
+    protected adminPermissionRequired(): Error {
+        return new Error('admin_permission_required')
+    }
+
+    protected memberPermissionRequired(): Error {
+        return new Error('member_permission_required')
+    }
+
+    static async create(name: string, imageURL: string, users: User[]): Promise<Chat> {
+        const data = Meta.with(name, imageURL).toData(true)
+        const chatId = await FireStream.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
+        const chat = new Chat(chatId, undefined, new Meta(name, imageURL))
+
+        // Make sure the current user is the owner
+        const usersToAdd = users.filter(user => !user.equals(User.currentUser()))
+        usersToAdd.push(User.currentUser(RoleType.owner()))
+
+        await chat.addUsers(true, usersToAdd)
+        await chat.inviteUsers(users)
+        return chat
+    }
+
 }

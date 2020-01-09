@@ -1,5 +1,7 @@
 import { BaseType } from './base-type'
 import { Keys } from '../firebase/service/keys'
+import { IJson } from '../interfaces/json'
+import { User } from '../chat/user'
 
 export class RoleType extends BaseType {
 
@@ -52,8 +54,36 @@ export class RoleType extends BaseType {
         return new RoleType(this.Banned)
     }
 
-    data(): { [key: string]: string } {
+    static none(): RoleType {
+        return new RoleType('')
+    }
+
+    data(): IJson {
         return { [Keys.Role]: this.get() }
+    }
+
+    test(user: User): boolean {
+        const roleType = user.roleType
+        return roleType !== undefined && roleType.toLevel() <= this.toLevel()
+    }
+
+    protected toLevel(): number {
+        if (this.type === RoleType.Owner) {
+            return 0;
+        }
+        if (this.type === RoleType.Admin) {
+            return 1;
+        }
+        if (this.type === RoleType.Member) {
+            return 2;
+        }
+        if (this.type === RoleType.Watcher) {
+            return 3;
+        }
+        if (this.type === RoleType.Banned) {
+            return 4;
+        }
+        return 5;
     }
 
 }

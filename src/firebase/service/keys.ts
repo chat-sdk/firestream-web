@@ -9,6 +9,7 @@ export class Keys {
     static ImageURL = 'image-url'
     static Created = 'created'
     static Role = 'role'
+    static Data = 'data'
 
     static Users = 'users'
     static Messages = 'messages'

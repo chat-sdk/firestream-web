@@ -101,7 +101,7 @@ export class FireStream extends AbstractChat {
 
     async connect(): Promise<void> {
         if (this.config == null) {
-            throw new Error('You need to call Fl.y.initialize(…)')
+            throw new Error('You need to call Fire.Stream.initialize(…)')
         }
         if (this.user == null) {
             throw new Error('Firebase must be authenticated to connect')
@@ -208,8 +208,11 @@ export class FireStream extends AbstractChat {
         this.connectionEvents.next(ConnectionEvent.didDisconnect())
     }
 
-    currentUserId(): string | undefined {
-        return this.user?.uid
+    currentUserId(): string {
+        if (!this.user) {
+            throw new Error('User not authenticated')
+        }
+        return this.user.uid
     }
 
     //
@@ -373,6 +376,10 @@ export class FireStream extends AbstractChat {
         } else {
             return super.dateOfLastDeliveryReceipt()
         }
+    }
+
+    currentUser(): User {
+        return new User(this.currentUserId())
     }
 
     protected messagesPath(): Path {

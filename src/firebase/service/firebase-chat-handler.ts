@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 
 import { Path } from './path'
-import { Chat } from '../../chat/chat'
 import { IJson } from '../../interfaces/json'
 import { Consumer } from '../../interfaces/consumer'
+import { Meta } from '../../chat/meta'
 
 export abstract class FirebaseChatHandler {
 
@@ -20,7 +20,7 @@ export abstract class FirebaseChatHandler {
      * @param chatPath path to chat document / entity
      * @return stream of data when chat meta changes
      */
-    abstract metaOn(path: Path): Observable<Chat.Meta>
+    abstract metaOn(path: Path): Observable<Meta>
 
     abstract updateMeta(chatPath: Path, meta: IJson): Promise<void>
 

@@ -1,3 +1,3 @@
 export interface IJson {
-    [x: string]: string|number|boolean|Date|IJson
+    [x: string]: undefined|string|number|boolean|Date|IJson
 }

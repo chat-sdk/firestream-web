@@ -8,7 +8,7 @@ import { Paths } from '../service/paths'
 import { Path } from '../service/path'
 import { User } from '../../chat/user'
 import { Keys } from '../service/keys'
-import { ChatMeta } from '../../chat/chat'
+import { Chat } from '../../chat/chat'
 import { IJson } from '../../interfaces/json'
 import { Consumer } from '../../interfaces/consumer'
 
@@ -22,14 +22,20 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         return new RxFirestore().set(Ref.document(Paths.userGroupChatPath(chatId)), User.dateDataProvider().data())
     }
 
-    metaOn(path: Path): Observable<ChatMeta> {
+    updateMeta(chatPath: Path, meta: IJson): Promise<void> {
+        return new RxFirestore().update(Ref.document(chatPath), meta)
+    }
+
+    metaOn(path: Path): Observable<Chat.Meta> {
         // Remove the last path because in this case, the document ref does not include the "meta keyword"
         return new RxFirestore().on(Ref.document(path)).pipe(map(snapshot => {
-            const meta: ChatMeta = {
-                name: snapshot.get(Keys.Name),
-                created: snapshot.get(Keys.Created),
-                avatarURL: snapshot.get(Keys.Avatar),
-            }
+            const meta = new Chat.Meta()
+
+            const base = Keys.Meta + '.'
+
+            meta.name = snapshot.get(base + Keys.Name)
+            meta.created = snapshot.get(base + Keys.Created)
+            meta.imageURL = snapshot.get(base + Keys.ImageURL)
 
             return meta
         }))

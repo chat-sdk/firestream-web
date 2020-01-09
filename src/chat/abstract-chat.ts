@@ -1,4 +1,4 @@
-import { Observable, ErrorObserver } from 'rxjs'
+import { Observable, ErrorObserver, Subscription } from 'rxjs'
 
 import { FirebaseCoreHandler } from '../firebase/service/firebase-core-handler'
 import { DisposableList } from '../firebase/rx/disposable-list'
@@ -16,17 +16,19 @@ import { TypingState } from '../message/typing-state'
 import { Invitation } from '../message/invitation'
 import { Presence } from '../message/presence'
 import { Consumer } from '../interfaces/consumer'
+import { IAbstractChat } from '../interfaces/abstract-chat'
+import { SubscriptionMap } from '../firebase/rx/subscription-map'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.
  * Mainly sending and receiving messages.
  */
-export abstract class AbstractChat  implements ErrorObserver<any> {
+export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat {
 
     /**
-     * Store the disposables so we can dispose of all of them when the user logs out
+     * Store the subscriptions so we can unsubscribe of all of them when the user logs out
      */
-    protected dl = new DisposableList()
+    protected sm = new SubscriptionMap()
 
     /**
      * Event events
@@ -79,7 +81,7 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
         const $sendables = this.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
         $sendables.forEach(sendable => {
             if (sendable) {
-                this.getEvents().getSendables().next(sendable)
+                this.getSendableEvents().getSendables().next(sendable)
                 this.sendables.push(sendable)
             }
         })
@@ -209,14 +211,14 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      */
     async connect(): Promise<void> {
         const date =  await this.dateOfLastDeliveryReceipt()
-        this.messagesOn(date).subscribe(this.passMessageResultToStream.bind(this), this.error)
+        this.sm.add(this.messagesOn(date).subscribe(this.passMessageResultToStream.bind(this), this.error))
     }
 
     /**
      * Disconnect from a chat
      */
     disconnect() {
-        this.dl.dispose()
+        this.sm.unsubscribe()
     }
 
     /**
@@ -243,11 +245,19 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
 
     }
 
+    getSendables(type?: SendableType): Sendable[] {
+        if (type) {
+            return this.sendables.filter(sendable => sendable && sendable.type === type.get())
+        } else {
+            return this.sendables
+        }
+    }
+
     /**
      * returns the events object which exposes the different sendable streams
      * @return events
      */
-    getEvents(): Events {
+    getSendableEvents(): Events {
         return this.events
     }
 
@@ -256,6 +266,14 @@ export abstract class AbstractChat  implements ErrorObserver<any> {
      * @return Firestore messages reference
      */
     protected abstract messagesPath(): Path
+
+    getSubscriptionMap(): SubscriptionMap {
+        return this.sm
+    }
+
+    manage(subscription: Subscription) {
+        this.getSubscriptionMap().add(subscription)
+    }
 
     abstract markRead(message: Message): Promise<void>
     abstract markReceived(message: Message): Promise<void>

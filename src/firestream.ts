@@ -100,8 +100,6 @@ export class FireStream extends AbstractChat {
     }
 
     async connect(): Promise<void> {
-        this.disconnect()
-
         if (this.config == null) {
             throw new Error('You need to call Fl.y.initialize(…)')
         }
@@ -114,18 +112,18 @@ export class FireStream extends AbstractChat {
         // MESSAGE DELETION
 
         // We always delete typing state and presence messages
-        let stream$ = this.getEvents().getSendables().allEvents()
+        let stream$ = this.getSendableEvents().getSendables().allEvents()
         if (!this.config.deleteMessagesOnReceipt) {
             stream$ = stream$.pipe(
                 filter(MessageStreamFilter.bySendableType(SendableType.typingState(), SendableType.presence()))
             )
         }
         // If deletion is enabled, we don't filter so we delete all the message types
-        this.dl.add(stream$.pipe(flatMap(this.deleteSendable)).subscribe())
+        this.sm.add(stream$.pipe(flatMap(this.deleteSendable)).subscribe())
 
         // DELIVERY RECEIPTS
 
-        this.dl.add(this.getEvents().getMessages().allEvents().subscribe(async message => {
+        this.sm.add(this.getSendableEvents().getMessages().allEvents().subscribe(async message => {
             try {
                 // If delivery receipts are enabled, send the delivery receipt
                 if (this.config.deliveryReceiptsEnabled) {
@@ -143,7 +141,7 @@ export class FireStream extends AbstractChat {
 
         // INVITATIONS
 
-        this.dl.add(this.getEvents().getInvitations().allEvents().pipe(flatMap(invitation => {
+        this.sm.add(this.getSendableEvents().getInvitations().allEvents().pipe(flatMap(invitation => {
             if (this.config.autoAcceptChatInvite) {
                 return invitation.accept()
             }
@@ -152,7 +150,7 @@ export class FireStream extends AbstractChat {
 
         // BLOCKED USERS
 
-        this.dl.add(this.listChangeOn(Paths.blockedPath()).subscribe(listEvent => {
+        this.sm.add(this.listChangeOn(Paths.blockedPath()).subscribe(listEvent => {
             const ue = UserEvent.from(listEvent)
             if (ue.type == EventType.Added) {
                 this.blocked.push(ue.user)
@@ -165,7 +163,7 @@ export class FireStream extends AbstractChat {
 
         // CONTACTS
 
-        this.dl.add(this.listChangeOn(Paths.contactsPath()).subscribe(listEvent => {
+        this.sm.add(this.listChangeOn(Paths.contactsPath()).subscribe(listEvent => {
             const ue = UserEvent.from(listEvent)
             if (ue.type == EventType.Added) {
                 this.contacts.push(ue.user)
@@ -178,7 +176,7 @@ export class FireStream extends AbstractChat {
 
         // CONNECT TO EXISTING GROUP CHATS
 
-        this.dl.add(this.listChangeOn(Paths.userGroupChatsPath()).subscribe(listEvent => {
+        this.sm.add(this.listChangeOn(Paths.userChatsPath()).subscribe(listEvent => {
             const chatEvent = ChatEvent.from(listEvent)
             const chat = chatEvent.chat
             if (chatEvent.type == EventType.Added) {
@@ -200,6 +198,8 @@ export class FireStream extends AbstractChat {
 
         // Connect to the message events AFTER we have added our events listeners
         await super.connect()
+
+        this.connectionEvents.next(ConnectionEvent.didConnect())
     }
 
     disconnect() {

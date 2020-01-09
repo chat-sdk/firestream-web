@@ -1,20 +1,20 @@
 export class Keys {
 
-    public static Type = 'type'
-    public static From = 'from'
-    public static Date = 'date'
-    public static Body = 'body'
+    static Type = 'type'
+    static From = 'from'
+    static Date = 'date'
+    static Body = 'body'
 
-    public static Name = 'name'
-    public static Avatar = 'avatar'
-    public static Created = 'created'
-    public static Role = 'role'
+    static Name = 'name'
+    static ImageURL = 'image-url'
+    static Created = 'created'
+    static Role = 'role'
 
-    public static Users = 'users'
-    public static Messages = 'messages'
-    public static Contacts = 'contacts'
-    public static Blocked = 'blocked'
-    public static Chats = 'chats'
-    public static Meta = 'meta'
+    static Users = 'users'
+    static Messages = 'messages'
+    static Contacts = 'contacts'
+    static Blocked = 'blocked'
+    static Chats = 'chats'
+    static Meta = 'meta'
 
 }

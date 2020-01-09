@@ -22,33 +22,25 @@ import { TextMessage } from '../message/text-message'
 import { Message } from '../message/message'
 import { MessageStreamFilter } from '../filter/message-stream-filter'
 import { Consumer } from '../interfaces/consumer'
-
-export interface ChatMeta {
-    name: string
-    avatarURL: string
-    created: Date
-}
+import { IJson } from '../interfaces/json'
 
 export class Chat extends AbstractChat {
 
     protected id: string
     protected joined?: Date
-    protected created?: Date
-    protected name?: string
-    protected avatarURL?: string
+    protected meta = new Chat.Meta()
 
     protected users = new Array<User>()
     protected userEvents = new MultiQueueSubject<UserEvent>()
 
     protected nameStream = new BehaviorSubject<string>('')
-    protected avatarURLStream = new BehaviorSubject<string>('')
+    protected imageURLStream = new BehaviorSubject<string>('')
 
-    constructor(id: string, joined?: Date) {
+    constructor(id: string, joined?: Date, meta?: Chat.Meta) {
         super()
         this.id = id
-        if (joined) {
-            this.joined = joined
-        }
+        this.joined = joined || this.joined
+        this.meta = meta || this.meta
     }
 
     async connect(): Promise<void> {
@@ -57,7 +49,7 @@ export class Chat extends AbstractChat {
 
         // If delivery receipts are enabled, send the delivery receipt
         if (this.config.deliveryReceiptsEnabled) {
-            this.dl.add(this.getEvents()
+            this.sm.add(this.getSendableEvents()
                     .getMessages()
                     .allEvents()
                     .pipe(filter(MessageStreamFilter.notFromMe()))
@@ -65,7 +57,7 @@ export class Chat extends AbstractChat {
                     .subscribe(this))
         }
 
-        this.dl.add(this.listChangeOn(Paths.groupChatUsersPath(this.id)).subscribe(listEvent => {
+        this.sm.add(this.listChangeOn(Paths.chatUsersPath(this.id)).subscribe(listEvent => {
             const userEvent = UserEvent.from(listEvent)
             if (userEvent.type === EventType.Added) {
                 this.users.push(userEvent.user)
@@ -78,53 +70,59 @@ export class Chat extends AbstractChat {
 
         // Handle name and image change
         const chatHandler = FireStream.shared().getFirebaseService().chat
-        this.dl.add(chatHandler.metaOn(Paths.groupChatMetaPath(this.id)).subscribe(meta => {
-            if (!meta) return
-            let newName = meta.name
-            if (newName && newName != this.name) {
-                this.name = newName
-                this.nameStream.next(this.name)
+        this.sm.add(chatHandler.metaOn(Paths.chatMetaPath(this.id)).subscribe(newMeta => {
+            if (!newMeta) return
+            if (newMeta.name && newMeta.name != this.meta.name) {
+                this.meta.name = newMeta.name
+                this.nameStream.next(newMeta.name)
             }
-            let newAvatarURL = meta.avatarURL
-            if (newAvatarURL && newAvatarURL != this.avatarURL) {
-                this.avatarURL = newAvatarURL
-                this.avatarURLStream.next(this.avatarURL)
+            if (newMeta.imageURL && newMeta.imageURL != this.meta.imageURL) {
+                this.meta.imageURL = newMeta.imageURL
+                this.imageURLStream.next(newMeta.imageURL)
             }
+            this.meta.created = newMeta.created || this.meta.created
         }, this.error))
 
         await super.connect()
     }
 
     messagesPath(): Path {
-        return Paths.groupChatMessagesPath(this.id)
+        return Paths.chatMessagesPath(this.id)
     }
 
-    static async create(name: string, avatarURL: string, users: User[]): Promise<Chat> {
-        const meta: { [key: string]: any } = {}
-
-        meta[Keys.Created] = FireStream.shared().core!.timestamp()
-        if (name) {
-            meta[Keys.Name] = name
+    async setName(name: string): Promise<void> {
+        if (this.meta.name === name) {
+            return Promise.resolve()
+        } else {
+            const newMeta = this.meta.copy()
+            newMeta.name = name
+            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
+            this.meta.name = name
         }
-        if (avatarURL) {
-            meta[Keys.Avatar] = avatarURL
+    }
+
+    setImageURL(url: string): Promise<void> {
+        if (this.meta.imageURL === url) {
+            return Promise.resolve()
+        } else {
+            const newMeta = this.meta.copy()
+            newMeta.imageURL = url
+            return FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
         }
+    }
 
-        const data: { [key: string]: any } = {}
-        data[Keys.Meta] = meta
-
+    static async create(name: string, imageURL: string, users: User[]): Promise<Chat> {
+        const data = Chat.Meta.with(name, imageURL).toData(true)
         const chatId = await FireStream.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
-        const groupChat = new Chat(chatId)
-        const usersToAdd = Array<User>()
-        for (const user of users) {
-            if (!user.isMe()) {
-                usersToAdd.push(user)
-            }
-        }
+        const chat = new Chat(chatId, undefined, new Chat.Meta(name, imageURL))
+
+        // Make sure the current user is the owner
+        const usersToAdd = users.filter(user => !user.equals(User.currentUser()))
         usersToAdd.push(User.currentUser(RoleType.owner()))
-        await groupChat.addUsers(usersToAdd)
-        await groupChat.inviteUsers(users)
-        return groupChat
+
+        await chat.addUsers(usersToAdd)
+        await chat.inviteUsers(users)
+        return chat
     }
 
     async inviteUsers(users: User[]): Promise<void> {
@@ -140,31 +138,31 @@ export class Chat extends AbstractChat {
     addUsers(users: User[]): Promise<void>
     addUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void>
     addUsers(arg1: Path | User[], arg2?: DataProvider, arg3?: User[]): Promise<void> {
-        return super.addUsers(Paths.groupChatUsersPath(this.id), User.roleTypeDataProvider(),  arg3 || (arg1 as User[]))
+        return super.addUsers(Paths.chatUsersPath(this.id), User.roleTypeDataProvider(),  arg3 || (arg1 as User[]))
     }
 
     updateUser(user: User): Promise<void>
     updateUser(path: Path, dataProvider: DataProvider, user: User): Promise<void>
     updateUser(arg1: Path | User, arg2?: DataProvider, arg3?: User): Promise<void> {
-        return super.updateUser(Paths.groupChatUsersPath(this.id), User.roleTypeDataProvider(), arg3 || (arg1 as User))
+        return super.updateUser(Paths.chatUsersPath(this.id), User.roleTypeDataProvider(), arg3 || (arg1 as User))
     }
 
     updateUsers(users: User[]): Promise<void>
     updateUsers(path: Path, dataProvider: DataProvider, user: User[]): Promise<void>
     updateUsers(arg1: Path | User[], arg2?: DataProvider, arg3?: User[]): Promise<void> {
-        return super.updateUsers(Paths.groupChatUsersPath(this.id), User.roleTypeDataProvider(), arg3 || (arg1 as User[]))
+        return super.updateUsers(Paths.chatUsersPath(this.id), User.roleTypeDataProvider(), arg3 || (arg1 as User[]))
     }
 
     removeUser(user: User): Promise<void>
     removeUser(path: Path, user: User): Promise<void>
     removeUser(arg1: User | Path, arg2?: User): Promise<void> {
-        return super.removeUser(Paths.groupChatUsersPath(this.id), arg2 || (arg1 as User))
+        return super.removeUser(Paths.chatUsersPath(this.id), arg2 || (arg1 as User))
     }
 
     removeUsers(users: User[]): Promise<void>
     removeUsers(path: Path, users: User[]): Promise<void>
     removeUsers(arg1: User[] | Path, arg2?: User[]): Promise<void> {
-        return super.removeUsers(Paths.groupChatUsersPath(this.id), arg2 || (arg1 as User[]))
+        return super.removeUsers(Paths.chatUsersPath(this.id), arg2 || (arg1 as User[]))
     }
 
     getId(): string {
@@ -172,7 +170,7 @@ export class Chat extends AbstractChat {
     }
 
     send(sendable: Sendable, newId?: Consumer<string>): Promise<void> {
-        return this.sendToPath(Paths.groupChatMessagesPath(this.id), sendable, newId)
+        return this.sendToPath(Paths.chatMessagesPath(this.id), sendable, newId)
     }
 
     leave(): Promise<void> {
@@ -266,8 +264,8 @@ export class Chat extends AbstractChat {
         return this.nameStream
     }
 
-    getAvatarURLStream(): Observable<string> {
-        return this.avatarURLStream
+    getImageURLStream(): Observable<string> {
+        return this.imageURLStream
     }
 
     getFireStreamUsers(): Array<FireStreamUser> {
@@ -278,4 +276,59 @@ export class Chat extends AbstractChat {
         return firestreamUsers
     }
 
+    getName(): string | undefined {
+        return this.meta.name
+    }
+
+    getImageURL(): string | undefined {
+        return this.meta.imageURL
+    }
+
+    path(): Path {
+        return Paths.chatPath(this.id)
+    }
+
+    protected setMeta(meta: Chat.Meta) {
+        this.meta = meta
+    }
+
+}
+
+export namespace Chat {
+    export class Meta {
+        name?: string
+        imageURL?: string
+        created?: Date
+
+        constructor(name?: string, imageURL?: string, created?: Date) {
+            this.name = name
+            this.imageURL = imageURL
+            this.created = created
+        }
+
+        toData(includeTimestamp: boolean): IJson {
+            const data: IJson = {}
+
+            data[Keys.Name] = name
+            data[Keys.ImageURL] = this.imageURL
+
+            if (includeTimestamp) {
+                data[Keys.Created] = FireStream.shared().getFirebaseService().core.timestamp()
+            }
+
+            const meta: IJson = {
+                [Keys.Meta]: data
+            }
+
+            return meta
+        }
+
+        copy(): Meta {
+            return new Meta(this.name, this.imageURL, this.created)
+        }
+
+        static with(name: string, imageURL: string): Meta {
+            return new Meta(name, imageURL)
+        }
+    }
 }

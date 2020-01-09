@@ -48,6 +48,10 @@ export class RxFirestore {
         return ref.set(data)
     }
 
+    update(ref: firebase.firestore.DocumentReference, data: firebase.firestore.DocumentData): Promise<void> {
+        return ref.update(data)
+    }
+
     get(ref: firebase.firestore.DocumentReference): Promise<firebase.firestore.DocumentSnapshot>
     get(ref: firebase.firestore.Query): Promise<firebase.firestore.QuerySnapshot>
     get(ref: firebase.firestore.DocumentReference | firebase.firestore.Query): Promise<firebase.firestore.DocumentSnapshot | firebase.firestore.QuerySnapshot> {

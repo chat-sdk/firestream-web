@@ -20,12 +20,12 @@ export class Paths extends Keys {
         return this.userPath(uid || this.currentUserId()).child(this.Messages)
     }
 
-    static userGroupChatsPath(): Path {
+    static userChatsPath(): Path {
         return this.userPath(this.currentUserId()).child(Keys.Chats)
     }
 
     static userGroupChatPath(chatId: string): Path {
-        return this.userGroupChatsPath().child(chatId)
+        return this.userChatsPath().child(chatId)
     }
 
     static messagePath(messageId: string): Path
@@ -58,20 +58,20 @@ export class Paths extends Keys {
         return this.root().child(this.Chats)
     }
 
-    static groupChatPath(chatId: string): Path {
+    static chatPath(chatId: string): Path {
         return this.chatsPath().child(chatId)
     }
 
-    static groupChatMetaPath(chatId: string): Path {
+    static chatMetaPath(chatId: string): Path {
         return this.chatsPath().child(chatId).child(this.Meta)
     }
 
-    static groupChatMessagesPath(chatId: string): Path {
-        return this.groupChatPath(chatId).child(this.Messages)
+    static chatMessagesPath(chatId: string): Path {
+        return this.chatPath(chatId).child(this.Messages)
     }
 
-    static groupChatUsersPath(chatId: string): Path {
-        return this.groupChatPath(chatId).child(this.Users)
+    static chatUsersPath(chatId: string): Path {
+        return this.chatPath(chatId).child(this.Users)
     }
 
 }

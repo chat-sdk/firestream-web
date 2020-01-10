@@ -6,10 +6,10 @@ import 'firebase/firestore'
 
 import { firebaseConfig } from './firebase-config'
 import { Fire } from '..'
-import { User } from '../dist/chat/user'
-import { ConnectionEventType } from '../dist/events/connection-event'
-import { EventType } from '../dist/events/event-type'
-import { ContactType } from '../dist/types/contact-type'
+import { User } from '../lib/chat/user'
+import { ConnectionEventType } from '../lib/events/connection-event'
+import { EventType } from '../lib/events/event-type'
+import { ContactType } from '../lib/types/contact-type'
 
 const app = initializeApp(firebaseConfig)
 Fire.Stream.initialize(app)

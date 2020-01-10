@@ -5,7 +5,7 @@
   "keywords": [],
   "license": "ISC",
   "author": "Pepe Becker <pepe@chatsdk.co> (https://chatsdk.co)",
-  "main": "dist/firestream.js",
+  "main": "lib/firestream.js",
   "scripts": {
     "start": "onchange 'src/**/*.ts' -- npm run build",
     "build": "tsc",

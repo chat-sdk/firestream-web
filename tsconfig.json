@@ -3,10 +3,11 @@
     "target": "es5",
     "module": "commonjs",
     "declaration": true,
-    "outDir": "dist",
+    "outDir": "lib",
     "strict": true
   },
   "exclude": [
+    "lib",
     "tests"
   ]
 }

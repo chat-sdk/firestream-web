@@ -1,6 +1,6 @@
-import { Sendable } from './sendable'
 import { SendableType } from '../types/sendable-types'
 import { TypingStateType } from '../types/typing-state-type'
+import { Sendable } from './sendable'
 
 export class TypingState extends Sendable {
 

@@ -1,6 +1,6 @@
-import { Sendable } from './sendable'
-import { SendableType } from '../types/sendable-types'
 import { IJson } from '../interfaces/json'
+import { SendableType } from '../types/sendable-types'
+import { Sendable } from './sendable'
 
 export class Message extends Sendable {
 

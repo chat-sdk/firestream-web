@@ -1,7 +1,7 @@
-import { Sendable } from './sendable'
-import { SendableType } from '../types/sendable-types'
-import { InvitationType } from '../types/invitation-type'
 import { FireStream } from '../firestream'
+import { InvitationType } from '../types/invitation-type'
+import { SendableType } from '../types/sendable-types'
+import { Sendable } from './sendable'
 
 export class Invitation extends Sendable {
 

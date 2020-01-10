@@ -1,6 +1,6 @@
-import { Sendable } from './sendable'
-import { SendableType } from '../types/sendable-types'
 import { PresenceType } from '../types/presence-type'
+import { SendableType } from '../types/sendable-types'
+import { Sendable } from './sendable'
 
 export class Presence extends Sendable {
 

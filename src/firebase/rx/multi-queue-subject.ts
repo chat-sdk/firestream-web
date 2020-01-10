@@ -1,4 +1,4 @@
-import { Subject, Observable, merge, Observer } from 'rxjs'
+import { merge, Observable, Observer, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 enum EventType {

@@ -1,7 +1,7 @@
-import { RoleType } from '../types/role-type'
-import { ContactType } from '../types/contact-type'
-import { FireStream } from '../firestream'
 import { Keys } from '../firebase/service/keys'
+import { FireStream } from '../firestream'
+import { ContactType } from '../types/contact-type'
+import { RoleType } from '../types/role-type'
 
 export interface DataProvider {
     data(user?: User): { [key: string]: any }

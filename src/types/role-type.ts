@@ -1,7 +1,7 @@
-import { BaseType } from './base-type'
+import { User } from '../chat/user'
 import { Keys } from '../firebase/service/keys'
 import { IJson } from '../interfaces/json'
-import { User } from '../chat/user'
+import { BaseType } from './base-type'
 
 export class RoleType extends BaseType {
 

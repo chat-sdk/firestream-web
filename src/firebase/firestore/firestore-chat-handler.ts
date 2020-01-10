@@ -1,16 +1,16 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FirebaseChatHandler } from '../service/firebase-chat-handler'
-import { RxFirestore } from './rx-firestore'
-import { Ref } from './ref'
-import { Paths } from '../service/paths'
-import { Path } from '../service/path'
-import { User } from '../../chat/user'
-import { Keys } from '../service/keys'
-import { IJson } from '../../interfaces/json'
-import { Consumer } from '../../interfaces/consumer'
 import { Meta } from '../../chat/meta'
+import { User } from '../../chat/user'
+import { Consumer } from '../../interfaces/consumer'
+import { IJson } from '../../interfaces/json'
+import { FirebaseChatHandler } from '../service/firebase-chat-handler'
+import { Keys } from '../service/keys'
+import { Path } from '../service/path'
+import { Paths } from '../service/paths'
+import { Ref } from './ref'
+import { RxFirestore } from './rx-firestore'
 
 export class FirestoreChatHandler extends FirebaseChatHandler {
 

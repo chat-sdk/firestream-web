@@ -1,6 +1,6 @@
+import { FireStream } from '../firestream'
 import { Sendable } from '../message/sendable'
 import { SendableType } from '../types/sendable-types'
-import { FireStream } from '../firestream'
 
 export class MessageStreamFilter {
 

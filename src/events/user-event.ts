@@ -1,11 +1,11 @@
 import { User } from '../chat/user'
+import { Keys } from '../firebase/service/keys'
+import { FireStreamUser } from '../namespace/firestream-user'
+import { ContactType } from '../types/contact-type'
+import { RoleType } from '../types/role-type'
 import { Event } from './event'
 import { EventType } from './event-type'
 import { ListEvent } from './list-event'
-import { Keys } from '../firebase/service/keys'
-import { RoleType } from '../types/role-type'
-import { ContactType } from '../types/contact-type'
-import { FireStreamUser } from '../namespace/firestream-user'
 
 export class UserEvent extends Event {
 

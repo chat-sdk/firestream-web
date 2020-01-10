@@ -1,6 +1,6 @@
-import { Sendable } from './sendable'
-import { SendableType } from '../types/sendable-types'
 import { DeliveryReceiptType } from '../types/delivery-receipt-type'
+import { SendableType } from '../types/sendable-types'
+import { Sendable } from './sendable'
 
 export class DeliveryReceipt extends Sendable {
 

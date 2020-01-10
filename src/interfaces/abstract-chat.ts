@@ -1,9 +1,9 @@
 import { Subscription } from 'rxjs'
 
+import { Events } from '../chat/events'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
 import { Sendable } from '../message/sendable'
 import { SendableType } from '../types/sendable-types'
-import { Events } from '../chat/events'
 
 export interface IAbstractChat {
 

@@ -1,6 +1,6 @@
+import { FireStream } from '../../firestream'
 import { Keys } from './keys'
 import { Path } from './path'
-import { FireStream } from '../../firestream'
 
 export class Paths extends Keys {
 

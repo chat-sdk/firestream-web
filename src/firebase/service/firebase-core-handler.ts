@@ -1,11 +1,11 @@
 import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
 
-import { Path } from './path'
-import { ListEvent } from '../../events/list-event'
-import { Sendable } from '../../message/sendable'
 import { DataProvider, User } from '../../chat/user'
+import { ListEvent } from '../../events/list-event'
 import { Consumer } from '../../interfaces/consumer'
+import { Sendable } from '../../message/sendable'
+import { Path } from './path'
 
 export abstract class FirebaseCoreHandler {
 

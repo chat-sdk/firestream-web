@@ -1,18 +1,18 @@
 import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
-import { map, filter } from 'rxjs/operators'
+import { filter, map } from 'rxjs/operators'
 
-import { FirebaseCoreHandler } from '../service/firebase-core-handler'
-import { Path } from '../service/path'
-import { ListEvent } from '../../events/list-event'
-import { RxFirestore } from './rx-firestore'
-import { Ref } from './ref'
-import { Sendable } from '../../message/sendable'
 import { DataProvider, User } from '../../chat/user'
-import { Keys } from '../service/keys'
-import { FireStream } from '../../firestream'
 import { EventType } from '../../events/event-type'
+import { ListEvent } from '../../events/list-event'
+import { FireStream } from '../../firestream'
 import { Consumer } from '../../interfaces/consumer'
+import { Sendable } from '../../message/sendable'
+import { FirebaseCoreHandler } from '../service/firebase-core-handler'
+import { Keys } from '../service/keys'
+import { Path } from '../service/path'
+import { Ref } from './ref'
+import { RxFirestore } from './rx-firestore'
 
 export class FirestoreCoreHandler extends FirebaseCoreHandler {
 

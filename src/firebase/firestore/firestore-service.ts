@@ -1,6 +1,6 @@
 import { FirebaseService } from '../service/firebase-service'
-import { FirestoreCoreHandler } from './firestore-core-handler'
 import { FirestoreChatHandler } from './firestore-chat-handler'
+import { FirestoreCoreHandler } from './firestore-core-handler'
 
 export class FirestoreService extends FirebaseService {
 

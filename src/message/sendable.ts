@@ -1,8 +1,8 @@
-import { FireStream } from '../firestream'
 import { Keys } from '../firebase/service/keys'
+import { FireStream } from '../firestream'
+import { IJson } from '../interfaces/json'
 import { BaseType } from '../types/base-type'
 import { BaseMessage } from './base-message'
-import { IJson } from '../interfaces/json'
 
 export class Sendable extends BaseMessage {
 

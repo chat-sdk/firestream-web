@@ -1,9 +1,9 @@
-import * as firebase from 'firebase/app'
 import 'firebase/firestore'
+
+import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
 
 import { Consumer } from '../../interfaces/consumer'
-import { Keys } from '../service/keys'
 
 export class RxFirestore {
 

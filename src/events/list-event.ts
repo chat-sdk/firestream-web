@@ -1,6 +1,6 @@
+import { IJson } from '../interfaces/json'
 import { Event } from './event'
 import { EventType } from './event-type'
-import { IJson } from '../interfaces/json'
 
 export class ListEvent extends Event {
 

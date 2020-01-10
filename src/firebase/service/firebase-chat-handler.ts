@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 
-import { Path } from './path'
-import { IJson } from '../../interfaces/json'
-import { Consumer } from '../../interfaces/consumer'
 import { Meta } from '../../chat/meta'
+import { Consumer } from '../../interfaces/consumer'
+import { IJson } from '../../interfaces/json'
+import { Path } from './path'
 
 export abstract class FirebaseChatHandler {
 

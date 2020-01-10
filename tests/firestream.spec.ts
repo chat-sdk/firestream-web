@@ -1,15 +1,15 @@
 import 'mocha'
-
-import { initializeApp } from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/firestore'
 
-import { firebaseConfig } from './firebase-config'
-import { Fire } from '..'
+import { initializeApp } from 'firebase/app'
+
+import { Fire } from '../'
 import { User } from '../lib/chat/user'
 import { ConnectionEventType } from '../lib/events/connection-event'
 import { EventType } from '../lib/events/event-type'
 import { ContactType } from '../lib/types/contact-type'
+import { firebaseConfig } from './firebase-config'
 
 const app = initializeApp(firebaseConfig)
 Fire.Stream.initialize(app)

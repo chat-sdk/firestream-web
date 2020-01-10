@@ -1,13 +1,13 @@
-import { Subject, Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
-import { Sendable } from '../message/sendable'
-import { Message } from '../message/message'
 import { DeliveryReceipt } from '../message/delivery-receipt'
-import { TypingState } from '../message/typing-state'
-import { Presence } from '../message/presence'
 import { Invitation } from '../message/invitation'
+import { Message } from '../message/message'
+import { Presence } from '../message/presence'
+import { Sendable } from '../message/sendable'
+import { TypingState } from '../message/typing-state'
 import { FireStreamMessage } from '../namespace/firestream-message'
 
 export class Events {

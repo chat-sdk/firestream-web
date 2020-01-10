@@ -1,7 +1,7 @@
 import * as firebase from 'firebase/app'
 
-import { Path } from '../service/path'
 import { FireStream } from '../../firestream'
+import { Path } from '../service/path'
 
 export class Ref {
 

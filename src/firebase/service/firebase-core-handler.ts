@@ -1,11 +1,10 @@
-import * as firebase from 'firebase/app'
 import { Observable } from 'rxjs'
 
 import { DataProvider, User } from '../../chat/user'
 import { ListEvent } from '../../events/list-event'
 import { Consumer } from '../../interfaces/consumer'
-import { Sendable } from '../../message/sendable'
 import { Path } from './path'
+import { ISendable } from '../../interfaces/sendable'
 
 export abstract class FirebaseCoreHandler {
 
@@ -33,7 +32,7 @@ export abstract class FirebaseCoreHandler {
      * @param newId get the id of the new message before it's sent
      * @return completion
      */
-    abstract send(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void>
+    abstract send(messagesPath: Path, sendable: ISendable, newId?: Consumer<string>): Promise<void>
 
     /**
      * Add users to a reference
@@ -73,7 +72,7 @@ export abstract class FirebaseCoreHandler {
      * @param limit limit the maximum number of messages
      * @return a events of message results
      */
-    abstract messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<Sendable>
+    abstract messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable>
 
     /**
      * This method gets the date of the last delivery receipt that we sent - i.e. the
@@ -90,7 +89,7 @@ export abstract class FirebaseCoreHandler {
      * @param limit limit the maximum number of historic messages
      * @return a events of message results
      */
-    abstract messagesOn(messagesPath: Path, newerTha?: Date, limit?: number): Observable<Sendable>
+    abstract messagesOn(messagesPath: Path, newerTha?: Date, limit?: number): Observable<ISendable>
 
     /**
      * Return a Firebase timestamp object

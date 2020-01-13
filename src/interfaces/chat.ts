@@ -4,7 +4,6 @@ import { User } from '../chat/user'
 import { UserEvent } from '../events/user-event'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { Message } from '../message/message'
-import { Sendable } from '../message/sendable'
 import { FireStreamUser } from '../namespace/firestream-user'
 import { DeliveryReceiptType } from '../types/delivery-receipt-type'
 import { RoleType } from '../types/role-type'
@@ -12,6 +11,7 @@ import { TypingStateType } from '../types/typing-state-type'
 import { IAbstractChat } from './abstract-chat'
 import { Consumer } from './consumer'
 import { IJson } from './json'
+import { ISendable } from './sendable'
 
 /**
  * This interface is just provided for clarity
@@ -249,14 +249,14 @@ export interface IChat extends IAbstractChat {
      * @param newId message's new ID before sending
      * @return completion
      */
-    send(sendable: Sendable, newId?: Consumer<String>): Promise<void>
+    send(sendable: ISendable, newId?: Consumer<String>): Promise<void>
 
     /**
      * Send a custom sendable
      * @param sendable to send
      * @return completion
      */
-    send(sendable: Sendable): Promise<void>
+    send(sendable: ISendable): Promise<void>
 
     /**
      * Mark a message as received

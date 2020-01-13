@@ -1,28 +1,48 @@
-import * as firebase from 'firebase/app'
+import { firestore } from 'firebase/app'
 
-import { FireStream } from '../../firestream'
+import { FirebaseService } from '../service/firebase-service'
 import { Path } from '../service/path'
 
 export class Ref {
 
-    static collection(path: Path): firebase.firestore.CollectionReference {
-        let ref = this.db().collection(path.first())
-        for (let i = 1; i < path.size(); i += 2) {
-            const c1 = path.get(i)
-            const c2 = path.get(i+1)
-            if (c1 && c2) {
-                ref = ref.doc(c1).collection(c2)
+    static collection(path: Path): firestore.CollectionReference {
+        const ref = this.referenceFromPath(path)
+        if (ref instanceof firestore.CollectionReference) {
+            return ref
+        } else {
+            throw new Error('error_mismatched_col_reference')
+        }
+    }
+
+    static document(path: Path): firestore.DocumentReference {
+        const ref = this.referenceFromPath(path)
+        if (ref instanceof firestore.DocumentReference) {
+            return ref
+        } else {
+            throw new Error('error_mismatched_col_reference')
+        }
+    }
+
+    static referenceFromPath(path: Path): firestore.DocumentReference | firestore.CollectionReference {
+        let ref: firestore.DocumentReference | firestore.CollectionReference = this.db().collection(path.first())
+        for (let i = 1; i < path.size(); i++) {
+            const component = path.get(i)
+            if (!component) continue
+            if (ref instanceof firestore.DocumentReference) {
+                ref = ref.collection(component)
+            } else if (ref instanceof firestore.CollectionReference) {
+                ref = ref.doc(component)
             }
         }
         return ref
     }
 
-    static document(path: Path): firebase.firestore.DocumentReference {
-        return this.collection(path).doc(path.last())
-    }
-
-    static db(): firebase.firestore.Firestore {
-        return FireStream.shared().firebaseApp.firestore()
+    static db(): firestore.Firestore {
+        const app = FirebaseService.app
+        if (!app) {
+            throw new Error('FirebaseService.app returned undefined')
+        }
+        return app.firestore()
     }
 
 }

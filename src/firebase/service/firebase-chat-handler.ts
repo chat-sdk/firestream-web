@@ -22,7 +22,7 @@ export abstract class FirebaseChatHandler {
      */
     abstract metaOn(path: Path): Observable<Meta>
 
-    abstract updateMeta(chatPath: Path, meta: IJson): Promise<void>
+    abstract updateMeta(chatMetaPath: Path, meta: IJson): Promise<void>
 
     abstract add(path: Path, data: IJson, newId?: Consumer<string>): Promise<string>
 

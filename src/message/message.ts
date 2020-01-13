@@ -1,4 +1,5 @@
 import { IJson } from '../interfaces/json'
+import { ISendable } from '../interfaces/sendable'
 import { SendableType } from '../types/sendable-types'
 import { Sendable } from './sendable'
 
@@ -18,7 +19,7 @@ export class Message extends Sendable {
         }
     }
 
-    static fromSendable(sendable: Sendable): Message {
+    static fromSendable(sendable: ISendable): Message {
         return sendable.copyTo(new Message())
     }
 

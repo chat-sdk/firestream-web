@@ -22,12 +22,27 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         return new RxFirestore().set(Ref.document(Paths.userGroupChatPath(chatId)), User.dateDataProvider().data())
     }
 
-    updateMeta(chatPath: Path, meta: IJson): Promise<void> {
-        return new RxFirestore().update(Ref.document(chatPath), meta)
+    updateMeta(chatMetaPath: Path, meta: IJson): Promise<void> {
+        chatMetaPath.normalizeForDocument()
+
+        const keys = Object.keys(meta)
+
+        let toWrite: IJson = { ...meta }
+        const remainder = chatMetaPath.getRemainder()
+        if (remainder) {
+            toWrite = this.wrap(remainder, meta);
+            keys.push(remainder)
+        }
+        return new RxFirestore().update(Ref.document(chatMetaPath), toWrite, keys)
+    }
+
+    protected wrap(key: string, map: IJson): IJson {
+        return {
+            [key]: map
+        }
     }
 
     metaOn(path: Path): Observable<Meta> {
-        // Remove the last path because in this case, the document ref does not include the "meta keyword"
         return new RxFirestore().on(Ref.document(path)).pipe(map(snapshot => {
             const meta = new Meta()
 
@@ -36,6 +51,7 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
             meta.setName(snapshot.get(base + Keys.Name))
             meta.setCreated(snapshot.get(base + Keys.Created))
             meta.setImageURL(snapshot.get(base + Keys.ImageURL))
+            meta.setData(snapshot.get(base + Keys.Data))
 
             return meta
         }))

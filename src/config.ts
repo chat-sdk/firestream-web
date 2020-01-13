@@ -5,6 +5,15 @@ export enum DatabaseType {
 
 export class Config {
 
+    private static instance: Config
+
+    static get shared() {
+        if (!this.instance) {
+            this.instance = new Config()
+        }
+        return this.instance
+    }
+
     /**
      * Should the framework automatically send a delivery receipt when
      * a message is received

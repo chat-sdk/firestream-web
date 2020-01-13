@@ -1,14 +1,13 @@
 import { Observable, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
 
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Invitation } from '../message/invitation'
 import { Message } from '../message/message'
 import { Presence } from '../message/presence'
-import { Sendable } from '../message/sendable'
 import { TypingState } from '../message/typing-state'
 import { FireStreamMessage } from '../namespace/firestream-message'
+import { ISendable } from '../interfaces/sendable'
 
 export class Events {
 
@@ -18,7 +17,7 @@ export class Events {
     protected presences = new MultiQueueSubject<Presence>()
     protected invitations = new MultiQueueSubject<Invitation>()
 
-    protected sendables = new MultiQueueSubject<Sendable>()
+    protected sendables = new MultiQueueSubject<ISendable>()
 
     protected errors = new Subject<Error>()
 
@@ -53,7 +52,7 @@ export class Events {
         return this.typingStates
     }
 
-    getSendables(): MultiQueueSubject<Sendable> {
+    getSendables(): MultiQueueSubject<ISendable> {
         return this.sendables
     }
 

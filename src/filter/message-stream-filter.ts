@@ -1,11 +1,11 @@
-import { FireStream } from '../firestream'
-import { Sendable } from '../message/sendable'
+import { FirebaseService } from '../firebase/service/firebase-service'
 import { SendableType } from '../types/sendable-types'
+import { ISendable } from '../interfaces/sendable'
 
 export class MessageStreamFilter {
 
     static bySendableType(...types: SendableType[]) {
-        return (sendable: Sendable) => {
+        return (sendable: ISendable) => {
             for (const type of types) {
                 if (sendable.getType() === type.get()) {
                     return true
@@ -16,7 +16,7 @@ export class MessageStreamFilter {
     }
 
     static notFromMe() {
-        return (sendable: Sendable) => sendable.from !== FireStream.shared().currentUserId()
+        return (sendable: ISendable) => sendable.from !== FirebaseService.userId
     }
 
 }

@@ -1,4 +1,3 @@
-import { User } from '../chat/user'
 import { Keys } from '../firebase/service/keys'
 import { IJson } from '../interfaces/json'
 import { BaseType } from './base-type'
@@ -62,8 +61,7 @@ export class RoleType extends BaseType {
         return { [Keys.Role]: this.get() }
     }
 
-    test(user: User): boolean {
-        const roleType = user.roleType
+    test(roleType?: RoleType): boolean {
         return roleType !== undefined && roleType.toLevel() <= this.toLevel()
     }
 

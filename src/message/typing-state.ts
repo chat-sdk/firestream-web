@@ -1,3 +1,4 @@
+import { ISendable } from '../interfaces/sendable'
 import { SendableType } from '../types/sendable-types'
 import { TypingStateType } from '../types/typing-state-type'
 import { Sendable } from './sendable'
@@ -16,7 +17,7 @@ export class TypingState extends Sendable {
         return new TypingStateType(super.getBodyType())
     }
 
-    static fromSendable(sendable: Sendable): TypingState {
+    static fromSendable(sendable: ISendable): TypingState {
         return sendable.copyTo(new TypingState())
     }
 

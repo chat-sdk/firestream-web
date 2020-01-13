@@ -1,3 +1,4 @@
+import { ISendable } from '../interfaces/sendable'
 import { DeliveryReceiptType } from '../types/delivery-receipt-type'
 import { SendableType } from '../types/sendable-types'
 import { Sendable } from './sendable'
@@ -23,7 +24,7 @@ export class DeliveryReceipt extends Sendable {
         return new DeliveryReceiptType(super.getBodyType())
     }
 
-    static fromSendable(sendable: Sendable): DeliveryReceipt {
+    static fromSendable(sendable: ISendable): DeliveryReceipt {
         return sendable.copyTo(new DeliveryReceipt())
     }
 

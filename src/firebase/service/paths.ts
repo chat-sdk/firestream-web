@@ -1,11 +1,12 @@
-import { FireStream } from '../../firestream'
+import { Config } from '../../config'
+import { FirebaseService } from './firebase-service'
 import { Keys } from './keys'
 import { Path } from './path'
 
 export class Paths extends Keys {
 
     static root(): Path {
-        return new Path([FireStream.shared().getConfig().root, FireStream.shared().getConfig().sandbox])
+        return new Path([Config.shared.root, Config.shared.sandbox])
     }
 
     static usersPath(): Path {
@@ -39,11 +40,7 @@ export class Paths extends Keys {
     }
 
     protected static currentUserId(): string {
-        const uid = FireStream.shared().currentUserId()
-        if (!uid) {
-            throw new Error('User not authenticated')
-        }
-        return uid
+        return FirebaseService.userId
     }
 
     static contactsPath(): Path {

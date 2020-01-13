@@ -1,5 +1,5 @@
+import { FirebaseService } from '../firebase/service/firebase-service'
 import { Keys } from '../firebase/service/keys'
-import { FireStream } from '../firestream'
 import { IJson } from '../interfaces/json'
 
 export class Meta {
@@ -8,10 +8,13 @@ export class Meta {
     protected imageURL = ''
     protected created?: Date
     protected data: IJson = {}
+    protected timestamp: any
+    protected wrapped = false
 
-    constructor(name?: string, imageURL?: string, created?: Date) {
+    constructor(name?: string, imageURL?: string, data?: IJson, created?: Date) {
         this.name = name || this.name
         this.imageURL = imageURL || this.imageURL
+        this.data = data || this.data
         this.created = created || this.created
     }
 
@@ -19,24 +22,37 @@ export class Meta {
         return name
     }
 
-    setName(name: string) {
+    setName(name: string): Meta {
         this.name = name
+        return this
     }
 
     getImageURL(): string {
         return this.imageURL
     }
 
-    setImageURL(imageURL: string) {
+    setImageURL(imageURL: string): Meta {
         this.imageURL = imageURL
+        return this
     }
 
-    setData(data: IJson) {
+    setData(data: IJson): Meta {
         this.data = data
+        return this
     }
 
     getData(): IJson {
         return this.data
+    }
+
+    addTimestamp(): Meta {
+        this.timestamp = FirebaseService.core.timestamp()
+        return this
+    }
+
+    wrap(): Meta {
+        this.wrapped = true
+        return this
     }
 
     getCreated(): Date | undefined {
@@ -47,32 +63,57 @@ export class Meta {
         this.created = created
     }
 
+    static nameData(name: string): IJson {
+        return {
+            [Keys.Name]: name
+        }
+    }
+
+    static imageURLData(imageURL: string): IJson {
+        return {
+            [Keys.ImageURL]: imageURL
+        }
+    }
+
+    static dataData(data: IJson): IJson {
+        return {
+            [Keys.Data]: data
+        }
+    }
+
     toData(includeTimestamp = false): IJson {
-        const toWrite: IJson = {}
+        const data: IJson = {}
 
-        toWrite[Keys.Name] = this.name
-        toWrite[Keys.ImageURL] = this.imageURL
-        toWrite[Keys.Data] = this.data
-
-        if (includeTimestamp) {
-            toWrite[Keys.Created] = FireStream.shared().getFirebaseService().core.timestamp()
+        if (name != null) {
+            data[Keys.Name] = this.name
         }
-
-        const meta: IJson = {
-            [Keys.Meta]: toWrite
+        if (this.imageURL != null) {
+            data[Keys.ImageURL] = this.imageURL
         }
+        if (this.data != null) {
+            data[Keys.Data] = this.data
+        }
+        if (this.timestamp != null) {
+            data[Keys.Created] = this.timestamp
+        }
+        if (this.wrapped) {
+            return Meta.wrap(data)
+        }
+        return data
+    }
 
-        return meta
+    protected static wrap(map: IJson): IJson {
+        return {
+            [Keys.Meta]: map
+        }
     }
 
     copy(): Meta {
-        const meta = new Meta(this.name, this.imageURL, this.created)
-        meta.data = this.data
-        return meta
+        return new Meta(this.name, this.imageURL, this.data, this.created)
     }
 
-    static with(name: string, imageURL: string): Meta {
-        return new Meta(name, imageURL)
+    static from(name: string, imageURL: string, data?: IJson): Meta {
+        return new Meta(name, imageURL, data)
     }
 
 }

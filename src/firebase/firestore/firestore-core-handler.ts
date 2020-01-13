@@ -5,8 +5,8 @@ import { filter, map } from 'rxjs/operators'
 import { DataProvider, User } from '../../chat/user'
 import { EventType } from '../../events/event-type'
 import { ListEvent } from '../../events/list-event'
-import { FireStream } from '../../firestream'
 import { Consumer } from '../../interfaces/consumer'
+import { ISendable } from '../../interfaces/sendable'
 import { Sendable } from '../../message/sendable'
 import { FirebaseCoreHandler } from '../service/firebase-core-handler'
 import { Keys } from '../service/keys'
@@ -15,6 +15,13 @@ import { Ref } from './ref'
 import { RxFirestore } from './rx-firestore'
 
 export class FirestoreCoreHandler extends FirebaseCoreHandler {
+
+    private firebaseApp: firebase.app.App
+
+    constructor(firebaseApp: firebase.app.App) {
+        super()
+        this.firebaseApp = firebaseApp
+    }
 
     listChangeOn(path: Path): Observable<ListEvent> {
         return new RxFirestore().onQuery(Ref.collection(path)).pipe(map(change => {
@@ -30,7 +37,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return new RxFirestore().delete(Ref.document(messagesPath))
     }
 
-    async send(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
+    async send(messagesPath: Path, sendable: ISendable, newId?: Consumer<string>): Promise<void> {
         await new RxFirestore().add(Ref.collection(messagesPath), sendable.toData(), newId)
     }
 
@@ -70,7 +77,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return this.runBatch(batch)
     }
 
-    messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<Sendable> {
+    messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
@@ -84,7 +91,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             query = query.limit(limit);
         }
 
-        return new Observable<Sendable>(emitter => {
+        return new Observable<ISendable>(emitter => {
             (async () => {
                 try {
                     const snapshot = await new RxFirestore().get(query)
@@ -108,7 +115,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
-        query = query.where(Keys.From, '==', FireStream.shared().currentUserId())
+        query = query.where(Keys.From, '==', this.firebaseApp.auth().currentUser?.uid)
         query = query.orderBy(Keys.Date, 'desc')
         query = query.limit(1)
 
@@ -133,7 +140,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @param newerThan only listen for messages after this date
      * @return a events of message results
      */
-    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<Sendable> {
+    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<ISendable> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
@@ -151,7 +158,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
                     }
                 }
             }))
-            .pipe(filter(s => !!s)) as Observable<Sendable>
+            .pipe(filter(s => !!s)) as Observable<ISendable>
     }
 
     timestamp() {

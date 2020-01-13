@@ -1,6 +1,7 @@
+import { IBaseMessage } from '../interfaces/base-message'
 import { IJson } from '../interfaces/json'
 
-export class BaseMessage {
+export class BaseMessage implements IBaseMessage {
 
     from = ''
     date = new Date()

@@ -1,10 +1,11 @@
+import { FirebaseService } from '../firebase/service/firebase-service'
 import { Keys } from '../firebase/service/keys'
-import { FireStream } from '../firestream'
 import { IJson } from '../interfaces/json'
+import { ISendable } from '../interfaces/sendable'
 import { BaseType } from '../types/base-type'
 import { BaseMessage } from './base-message'
 
-export class Sendable extends BaseMessage {
+export class Sendable extends BaseMessage implements ISendable {
 
     id!: string
 
@@ -12,11 +13,10 @@ export class Sendable extends BaseMessage {
         super()
 
         if (!id || !data) {
-            const uid = FireStream.shared().currentUserId()
-            if (uid) {
-                this.from = uid
-            } else {
-                console.error(new Error('FireStream.shared().currentUserId() returned undefined'))
+            try {
+                this.from = FirebaseService.userId
+            } catch (err) {
+                console.error(err)
             }
             return
         }
@@ -57,7 +57,7 @@ export class Sendable extends BaseMessage {
         throw new Error('Body doesn\'t contain key: ' + key)
     }
 
-    copyTo<T extends Sendable>(sendable: T): T {
+    copyTo<T extends ISendable>(sendable: T): T {
         sendable.id = this.id
         sendable.from = this.from
         sendable.body = this.body
@@ -65,11 +65,11 @@ export class Sendable extends BaseMessage {
         return sendable
     }
 
-    toData() {
+    toData(): IJson {
         const data = {
             [Keys.From]: this.from,
             [Keys.Body]: this.body,
-            [Keys.Date]: FireStream.shared().getFirebaseService().core.timestamp(),
+            [Keys.Date]: FirebaseService.core.timestamp(),
             [Keys.Type]: this.type,
         }
         return data

@@ -10,18 +10,18 @@ import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
 import { UserEvent } from './events/user-event'
 import { MessageStreamFilter } from './filter/message-stream-filter'
-import { FirestoreService } from './firebase/firestore/firestore-service'
 import { MultiQueueSubject } from './firebase/rx/multi-queue-subject'
 import { FirebaseService } from './firebase/service/firebase-service'
 import { Path } from './firebase/service/path'
 import { Paths } from './firebase/service/paths'
+import { IChat } from './interfaces/chat'
 import { Consumer } from './interfaces/consumer'
+import { IFireStream } from './interfaces/firestream'
 import { IJson } from './interfaces/json'
 import { DeliveryReceipt } from './message/delivery-receipt'
 import { Invitation } from './message/invitation'
 import { Message } from './message/message'
 import { Presence } from './message/presence'
-import { Sendable } from './message/sendable'
 import { TextMessage } from './message/text-message'
 import { TypingState } from './message/typing-state'
 import { ContactType } from './types/contact-type'
@@ -30,13 +30,13 @@ import { InvitationType } from './types/invitation-type'
 import { PresenceType } from './types/presence-type'
 import { SendableType } from './types/sendable-types'
 import { TypingStateType } from './types/typing-state-type'
+import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
+import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
+import { ISendable } from './interfaces/sendable'
 
-export class FireStream extends AbstractChat {
+export class FireStream extends AbstractChat implements IFireStream {
 
     private static instance: FireStream
-
-    private fbApp?: firebase.app.App
-    private user?: firebase.User
 
     protected contacts = new Array<User>()
     protected blocked = new Array<User>()
@@ -47,33 +47,31 @@ export class FireStream extends AbstractChat {
 
     protected connectionEvents = new BehaviorSubject<ConnectionEvent>(((null as unknown) as ConnectionEvent))
 
-    protected firebaseService?: FirebaseService
-
-    static shared() {
+    static get shared() {
         if (!this.instance) {
             this.instance = new FireStream()
         }
         return this.instance
     }
 
-    protected chats = new Array<Chat>()
+    protected chats = new Array<IChat>()
 
     initialize(app: firebase.app.App, config?: Config) {
-        this.fbApp = app
+        FirebaseService.setApp(app)
 
         if (config) {
             this.config = config
         }
 
-        if (this.config.database == DatabaseType.Firestore) {
-            this.firebaseService = new FirestoreService()
+        if (this.config.database == DatabaseType.Firestore && FirebaseService.app) {
+            FirebaseService.core = new FirestoreCoreHandler(FirebaseService.app)
+            FirebaseService.chat = new FirestoreChatHandler()
         }
         if (this.config.database == DatabaseType.Realtime) {
             // this.firebaseService = new RealtimeService()
         }
 
         app.auth().onAuthStateChanged(async user => {
-            this.user = user || undefined
             if (user) {
                 try {
                     await this.connect()
@@ -88,13 +86,6 @@ export class FireStream extends AbstractChat {
         })
     }
 
-    get firebaseApp(): firebase.app.App {
-        if (!this.fbApp) {
-            throw new Error('FireStream needs to be initialized!')
-        }
-        return this.fbApp
-    }
-
     isInitialized(): boolean {
         return this.config != null
     }
@@ -103,7 +94,7 @@ export class FireStream extends AbstractChat {
         if (this.config == null) {
             throw new Error('You need to call Fire.Stream.initialize(…)')
         }
-        if (this.user == null) {
+        if (FirebaseService.user == null) {
             throw new Error('Firebase must be authenticated to connect')
         }
 
@@ -187,7 +178,7 @@ export class FireStream extends AbstractChat {
             else if (chatEvent.type == EventType.Removed) {
                 chat.leave()
                     .then(() => {
-                        this.chats = this.chats.filter(c => !c.equals(chat))
+                        this.chats = this.chats.filter(c => c.getId() !== chat.getId())
                         this.chatEvents.next(chatEvent)
                     })
                     .catch(this.error)
@@ -209,17 +200,14 @@ export class FireStream extends AbstractChat {
     }
 
     currentUserId(): string {
-        if (!this.user) {
-            throw new Error('User not authenticated')
-        }
-        return this.user.uid
+        return FirebaseService.userId
     }
 
     //
     // Messages
     //
 
-    deleteSendable(sendable: Sendable): Promise<void> {
+    deleteSendable(sendable: ISendable): Promise<void> {
         return super.deleteSendableAtPath(Paths.messagePath(sendable.id))
     }
 
@@ -231,7 +219,7 @@ export class FireStream extends AbstractChat {
         return this.send(userId, new Invitation(type, groupId))
     }
 
-    send(toUserId: string, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
+    send(toUserId: string, sendable: ISendable, newId?: Consumer<string>): Promise<void> {
         return this.sendToPath(Paths.messagesPath(toUserId), sendable, newId)
     }
 
@@ -309,12 +297,12 @@ export class FireStream extends AbstractChat {
     //
 
     async createChat(name: string, avatarURL: string, users: User[]): Promise<Chat> {
-        const groupChat = await Chat.create(name, avatarURL, users)
-        await this.joinChat(groupChat.getId())
-        return groupChat
+        const chat = await Chat.create(name, avatarURL, users)
+        await this.joinChat(chat)
+        return chat
     }
 
-    getChat(chatId: string): Chat | undefined {
+    getChat(chatId: string): IChat | undefined {
         for (const chat of this.chats) {
             if (chat.getId() === chatId) {
                 return chat
@@ -322,15 +310,15 @@ export class FireStream extends AbstractChat {
         }
     }
 
-    leaveChat(chatId: string): Promise<void> {
-        return this.getFirebaseService().chat.leaveChat(chatId)
+    leaveChat(chat: IChat): Promise<void> {
+        return FirebaseService.chat.leaveChat(chat.getId())
     }
 
-    joinChat(chatId: string): Promise<void> {
-        return this.getFirebaseService().chat.joinChat(chatId)
+    joinChat(chat: IChat): Promise<void> {
+        return FirebaseService.chat.joinChat(chat.getId())
     }
 
-    getChats(): Chat[] {
+    getChats(): IChat[] {
         return this.chats
     }
 
@@ -391,10 +379,7 @@ export class FireStream extends AbstractChat {
     }
 
     getFirebaseService(): FirebaseService {
-        if (!this.firebaseService) {
-            throw new Error('FireStream needs to be initialized!')
-        }
-        return this.firebaseService
+        return FirebaseService.shared
     }
 
     getConnectionEvents(): Observable<ConnectionEvent> {
@@ -403,5 +388,23 @@ export class FireStream extends AbstractChat {
 
 }
 
-export { Fire } from './namespace/fire'
-export { F } from './namespace/f'
+// Namespace
+
+/**
+ * Just a convenience method to make invocations of FireStream more compact
+ * Fire.Stream.sendMessage()
+ * instead of
+ * FireStream.shared().sendMessage()
+ */
+export namespace Fire {
+    export const Stream = FireStream.shared
+    export const api = () => FireStream.shared
+}
+
+/**
+ * Even more convenient! Just F.S.sendMessage()!
+ */
+export namespace F {
+    export const S = FireStream.shared
+    export const ire = FireStream.shared
+}

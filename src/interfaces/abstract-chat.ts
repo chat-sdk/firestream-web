@@ -2,8 +2,8 @@ import { Subscription } from 'rxjs'
 
 import { Events } from '../chat/events'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
-import { Sendable } from '../message/sendable'
 import { SendableType } from '../types/sendable-types'
+import { ISendable } from './sendable'
 
 export interface IAbstractChat {
 
@@ -39,14 +39,14 @@ export interface IAbstractChat {
      * Get a list of all sendables received
      * @return a list of sendables
      */
-    getSendables(): Sendable[]
+    getSendables(): ISendable[]
 
     /**
      * Get a list of sendables filtered by type
      * @param type of sendable
      * @return a filtered list of sendables
      */
-    getSendables(type: SendableType): Sendable[]
+    getSendables(type: SendableType): ISendable[]
 
     /**
      * Get access to the events object which provides access to observables for sendable events

@@ -4,20 +4,20 @@ import 'firebase/firestore'
 
 import { initializeApp } from 'firebase/app'
 
-import { Fire } from '../'
-import { User } from '../lib/chat/user'
-import { ConnectionEventType } from '../lib/events/connection-event'
-import { EventType } from '../lib/events/event-type'
-import { ContactType } from '../lib/types/contact-type'
+import { FireStream } from '../src/firestream'
+import { User } from '../src/chat/user'
+import { ConnectionEventType } from '../src/events/connection-event'
+import { EventType } from '../src/events/event-type'
+import { ContactType } from '../src/types/contact-type'
 import { firebaseConfig } from './firebase-config'
 
 const app = initializeApp(firebaseConfig)
-Fire.Stream.initialize(app)
+FireStream.shared.initialize(app)
 
 const connect = async () => {
     await app.auth().signInWithEmailAndPassword('node@mail.com', 'pass1234')
     return new Promise(resolve => {
-        Fire.Stream.getConnectionEvents().subscribe(event => {
+        FireStream.shared.getConnectionEvents().subscribe(event => {
             if (event.getType() === ConnectionEventType.DidConnect) {
                 resolve()
             }
@@ -36,9 +36,9 @@ describe('perform tests', function() {
 
     it('add contact', async () => {
         await connected
-        await Fire.Stream.addContact(testUser, ContactType.contact())
+        await FireStream.shared.addContact(testUser, ContactType.contact())
 
-        const contacts = Fire.Stream.getContacts()
+        const contacts = FireStream.shared.getContacts()
         if (contacts.length !== 1) {
             throw new Error('contacts size must be 1')
         } else if (!contacts[0].equals(testUser)) {
@@ -49,7 +49,7 @@ describe('perform tests', function() {
     it('get contact added', async () => {
         await connected
         return new Promise((resolve, reject) => {
-            Fire.Stream.getContactEvents().allEvents().subscribe(event => {
+            FireStream.shared.getContactEvents().allEvents().subscribe(event => {
                 if (event.type === EventType.Added) {
                     if (event.user.equals(testUser)) {
                         resolve()
@@ -65,11 +65,42 @@ describe('perform tests', function() {
 
     it('delete contact', async () => {
         await connected
-        await Fire.Stream.removeContact(testUser)
+        await FireStream.shared.removeContact(testUser)
 
-        const contacts = Fire.Stream.getContacts()
+        const contacts = FireStream.shared.getContacts()
         if (contacts.length !== 0) {
             throw new Error('contacts size must be 0')
         }
+    })
+
+    it('get contact removed', async () => {
+        await connected
+        return new Promise((resolve, reject) => {
+            FireStream.shared.getContactEvents().allEvents().subscribe(event => {
+                console.log('CONTACT EVENT:', event.type)
+                if (event.type === EventType.Removed) {
+                    console.log('SUCCESS')
+                    if (event.user.equals(testUser)) {
+                        resolve()
+                    } else {
+                        reject(new Error('wrong user removed'))
+                    }
+                } else {
+                    reject(new Error('no contact removed'))
+                }
+            })
+        })
+    })
+
+    it('create chat', async () => {
+        await connected
+    })
+
+    it('modify chat', async () => {
+        await connected
+    })
+
+    it('message chat', async () => {
+        await connected
     })
 })

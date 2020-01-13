@@ -1,4 +1,6 @@
-import { FireStream } from '../firestream'
+import { Send } from '../chat/send'
+import { FirebaseService } from '../firebase/service/firebase-service'
+import { ISendable } from '../interfaces/sendable'
 import { InvitationType } from '../types/invitation-type'
 import { SendableType } from '../types/sendable-types'
 import { Sendable } from './sendable'
@@ -26,17 +28,16 @@ export class Invitation extends Sendable {
 
     async accept(): Promise<void> {
         if (this.getBodyType().equals(InvitationType.chat())) {
-            try {
-                return FireStream.shared().joinChat(this.getChatId())
-            } catch (err) {
-                throw err
-            }
+            return FirebaseService.chat.joinChat(this.getChatId())
         }
-        return Promise.resolve()
     }
 
-    static fromSendable(sendable: Sendable): Invitation {
+    static fromSendable(sendable: ISendable): Invitation {
         return sendable.copyTo(new Invitation())
+    }
+
+    static send(userId: string, type: InvitationType, groupId: string): Promise<void> {
+        return Send.toUserId(userId, new Invitation(type, groupId))
     }
 
 }

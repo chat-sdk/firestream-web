@@ -3,20 +3,19 @@ import { ErrorObserver, Observable, Subscription } from 'rxjs'
 import { Config } from '../config'
 import { ListEvent } from '../events/list-event'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
-import { FirebaseCoreHandler } from '../firebase/service/firebase-core-handler'
+import { FirebaseService } from '../firebase/service/firebase-service'
 import { Path } from '../firebase/service/path'
-import { FireStream } from '../firestream'
 import { IAbstractChat } from '../interfaces/abstract-chat'
 import { Consumer } from '../interfaces/consumer'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Invitation } from '../message/invitation'
 import { Message } from '../message/message'
 import { Presence } from '../message/presence'
-import { Sendable } from '../message/sendable'
 import { TypingState } from '../message/typing-state'
 import { SendableType } from '../types/sendable-types'
 import { Events } from './events'
 import { DataProvider, User } from './user'
+import { ISendable } from '../interfaces/sendable'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.
@@ -37,23 +36,15 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     /**
      * A list of all sendables received
      */
-    protected sendables = new Array<Sendable>()
+    protected sendables = new Array<ISendable>()
 
     /**
      * Current configuration
      */
     protected config = new Config()
 
-    /**
-     * Make sure that `FirebaseCoreHandler` is
-     * initialized and throw an error if not
-     */
-    get core(): FirebaseCoreHandler {
-        const core = FireStream.shared().getFirebaseService().core
-        if (!core) {
-            throw new Error('FirebaseCoreHandler is undefined')
-        }
-        return core
+    constructor() {
+        
     }
 
     /**
@@ -69,15 +60,15 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * Start listening to the current message reference and retrieve all messages
      * @return a events of message results
      */
-    protected messagesOn(): Observable<Sendable>
+    protected messagesOn(): Observable<ISendable>
     /**
      * Start listening to the current message reference and pass the messages to the events
      * @param newerThan only listen for messages after this date
      * @return a events of message results
      */
-    protected messagesOn(newerThan: Date): Observable<Sendable>
-    protected messagesOn(newerThan?: Date): Observable<Sendable> {
-        const $sendables = this.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
+    protected messagesOn(newerThan: Date): Observable<ISendable>
+    protected messagesOn(newerThan?: Date): Observable<ISendable> {
+        const $sendables = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
         $sendables.forEach(sendable => {
             if (sendable) {
                 this.getSendableEvents().getSendables().next(sendable)
@@ -94,8 +85,8 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param limit limit the maximum number of messages
      * @return a events of message results
      */
-    messagesOnce(fromDate?: Date, toDate?: Date, limit?: number): Observable<Sendable> {
-        return this.core.messagesOnce(this.messagesPath(), fromDate, toDate, limit)
+    messagesOnce(fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable> {
+        return FirebaseService.core.messagesOnce(this.messagesPath(), fromDate, toDate, limit)
     }
 
     /**
@@ -104,7 +95,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return single date
      */
     protected async dateOfLastDeliveryReceipt(): Promise<Date> {
-        return this.core.dateOfLastSentMessage(this.messagesPath())
+        return FirebaseService.core.dateOfLastSentMessage(this.messagesPath())
     }
 
     /**
@@ -113,7 +104,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return events of list events
      */
     protected listChangeOn(path: Path): Observable<ListEvent> {
-        return this.core.listChangeOn(path)
+        return FirebaseService.core.listChangeOn(path)
     }
 
     /**
@@ -123,8 +114,8 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param newId the ID of the new message
      * @return single containing message id
      */
-    sendToPath(messagesPath: Path, sendable: Sendable, newId?: Consumer<string>): Promise<void> {
-        return this.core.send(messagesPath, sendable, newId)
+    sendToPath(messagesPath: Path, sendable: ISendable, newId?: Consumer<string>): Promise<void> {
+        return FirebaseService.core.send(messagesPath, sendable, newId)
     }
 
     /**
@@ -133,7 +124,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return completion
      */
     protected deleteSendableAtPath(messagesPath: Path): Promise<void> {
-        return this.core.deleteSendable(messagesPath)
+        return FirebaseService.core.deleteSendable(messagesPath)
     }
 
     /**
@@ -153,7 +144,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return completion
      */
     protected removeUsers(path: Path, users: User[]): Promise<void> {
-        return this.core.removeUsers(path, users)
+        return FirebaseService.core.removeUsers(path, users)
     }
 
     /**
@@ -177,7 +168,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return completion
      */
     public addUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void> {
-        return this.core.addUsers(path, dataProvider, users)
+        return FirebaseService.core.addUsers(path, dataProvider, users)
     }
 
     /**
@@ -201,7 +192,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @return completion
      */
     updateUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void> {
-        return this.core.updateUsers(path, dataProvider, users)
+        return FirebaseService.core.updateUsers(path, dataProvider, users)
     }
 
     /**
@@ -224,7 +215,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * Convenience method to cast sendables and send them to the correct events
      * @param sendable the base sendable
      */
-    protected passMessageResultToStream(sendable: Sendable) {
+    protected passMessageResultToStream(sendable: ISendable) {
 
         if (sendable.type === SendableType.Message) {
             this.events.getMessages().next(Message.fromSendable(sendable))
@@ -244,7 +235,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
 
     }
 
-    getSendables(type?: SendableType): Sendable[] {
+    getSendables(type?: SendableType): ISendable[] {
         if (type) {
             return this.sendables.filter(sendable => sendable && sendable.type === type.get())
         } else {

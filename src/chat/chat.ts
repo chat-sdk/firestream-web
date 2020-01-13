@@ -7,13 +7,11 @@ import { MessageStreamFilter } from '../filter/message-stream-filter'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { Path } from '../firebase/service/path'
 import { Paths } from '../firebase/service/paths'
-import { FireStream } from '../firestream'
 import { IChat } from '../interfaces/chat'
 import { Consumer } from '../interfaces/consumer'
 import { IJson } from '../interfaces/json'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Message } from '../message/message'
-import { Sendable } from '../message/sendable'
 import { TextMessage } from '../message/text-message'
 import { TypingState } from '../message/typing-state'
 import { FireStreamUser } from '../namespace/firestream-user'
@@ -24,6 +22,10 @@ import { TypingStateType } from '../types/typing-state-type'
 import { AbstractChat } from './abstract-chat'
 import { Meta } from './meta'
 import { DataProvider, User } from './user'
+import { FirebaseService } from '../firebase/service/firebase-service'
+import { Send } from './send'
+import { Invitation } from '../message/invitation'
+import { ISendable } from '../interfaces/sendable'
 
 export class Chat extends AbstractChat implements IChat {
 
@@ -75,8 +77,7 @@ export class Chat extends AbstractChat implements IChat {
         }, this.error))
 
         // Handle name and image change
-        const chatHandler = FireStream.shared().getFirebaseService().chat
-        this.sm.add(chatHandler.metaOn(Paths.chatMetaPath(this.id)).subscribe(newMeta => {
+        this.sm.add(FirebaseService.chat.metaOn(Paths.chatMetaPath(this.id)).subscribe(newMeta => {
             if (!newMeta) return
             if (newMeta.getName() && newMeta.getName() != this.meta.getName()) {
                 this.meta.setName(newMeta.getName())
@@ -100,28 +101,11 @@ export class Chat extends AbstractChat implements IChat {
         return this.meta.getName()
     }
 
-    getCustomData(): IJson {
-        return this.meta.getData();
-    }
-
-    async setCustomData(data: IJson): Promise<void> {
-        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
-            throw this.adminPermissionRequired()
-        } else {
-            const newMeta = this.meta.copy()
-            newMeta.setData(data)
-            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData())
-            this.meta.setData(data)
-        }
-    }
-
     async setName(name: string): Promise<void> {
-        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
+        if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getName() !== name) {
-            const newMeta = this.meta.copy()
-            newMeta.setName(name)
-            await FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
+            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.nameData(name))
             this.meta.setName(name)
         }
     }
@@ -131,12 +115,24 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async setImageURL(url: string): Promise<void> {
-        if (!RoleType.admin().test(FireStream.shared().currentUser())) {
+        if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getImageURL() !== url) {
-            const newMeta = this.meta.copy()
-            newMeta.setImageURL(url)
-            return FireStream.shared().getFirebaseService().chat.updateMeta(this.path(), newMeta.toData(false))
+            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.imageURLData(url))
+            this.meta.setImageURL(name)
+        }
+    }
+
+    getCustomData(): IJson {
+        return this.meta.getData();
+    }
+
+    async setCustomData(data: IJson): Promise<void> {
+        if (!this.testPermission(RoleType.admin())) {
+            throw this.adminPermissionRequired()
+        } else {
+            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.dataData(data))
+            this.meta.setData(data)
         }
     }
 
@@ -205,7 +201,7 @@ export class Chat extends AbstractChat implements IChat {
         const promises = new Array<Promise<void>>()
         for (const user of users) {
             if (!user.isMe()) {
-                promises.push(FireStream.shared().sendInvitation(user.id, InvitationType.chat(), this.id).then())
+                promises.push(Invitation.send(user.id, InvitationType.chat(), this.id).then())
             }
         }
         await Promise.all(promises)
@@ -222,6 +218,11 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     setRole(user: User, roleType: RoleType): Promise<void> {
+        if (roleType.equals(RoleType.owner()) && !this.testPermission(RoleType.owner())) {
+            throw this.ownerPermissionRequired()
+        } else if(!this.testPermission(RoleType.admin())) {
+            throw this.adminPermissionRequired()
+        }
         user.roleType = roleType
         return this.updateUser(user)
     }
@@ -267,8 +268,11 @@ export class Chat extends AbstractChat implements IChat {
         return this.send(new DeliveryReceipt(type, messageId), newId)
     }
 
-    send(sendable: Sendable, newId?: Consumer<string>): Promise<void> {
-        return this.sendToPath(Paths.chatMessagesPath(this.id), sendable, newId)
+    async send(sendable: ISendable, newId?: Consumer<string>): Promise<void> {
+        if (!this.testPermission(RoleType.member())) {
+            throw this.memberPermissionRequired()
+        }
+        return Send.toPath(Paths.chatMessagesPath(this.id), sendable, newId)
     }
 
     markReceived(message: Message): Promise<void> {
@@ -280,7 +284,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     protected getMyRoleType(): RoleType {
-        return this.getRoleTypeForUser(FireStream.shared().currentUser())
+        return this.getRoleTypeForUser(User.currentUser())
     }
 
     equals(chat: any): boolean {
@@ -294,8 +298,16 @@ export class Chat extends AbstractChat implements IChat {
         this.meta = meta
     }
 
+    protected testPermission(roleType: RoleType): boolean {
+        return roleType.test(this.getRoleTypeForUser(User.currentUser()))
+    }
+
     path(): Path {
         return Paths.chatPath(this.id)
+    }
+
+    metaPath(): Path {
+        return Paths.chatMetaPath(this.id)
     }
 
     protected messagesPath(): Path {
@@ -315,8 +327,8 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     static async create(name: string, imageURL: string, users: User[]): Promise<Chat> {
-        const data = Meta.with(name, imageURL).toData(true)
-        const chatId = await FireStream.shared().getFirebaseService().chat.add(Paths.chatsPath(), data)
+        const data = Meta.from(name, imageURL).toData(true)
+        const chatId = await FirebaseService.chat.add(Paths.chatsPath(), data)
         const chat = new Chat(chatId, undefined, new Meta(name, imageURL))
 
         // Make sure the current user is the owner

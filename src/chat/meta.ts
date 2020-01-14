@@ -1,17 +1,17 @@
-import { FirebaseService } from '../firebase/service/firebase-service'
+import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
 
 export class Meta {
 
     protected name = ''
     protected imageURL = ''
     protected created?: Date
-    protected data: IJson = {}
+    protected data: IJsonObject = {}
     protected timestamp: any
     protected wrapped = false
 
-    constructor(name?: string, imageURL?: string, data?: IJson, created?: Date) {
+    constructor(name?: string, imageURL?: string, data?: IJsonObject, created?: Date) {
         this.name = name || this.name
         this.imageURL = imageURL || this.imageURL
         this.data = data || this.data
@@ -19,7 +19,7 @@ export class Meta {
     }
 
     getName(): string {
-        return name
+        return this.name
     }
 
     setName(name: string): Meta {
@@ -36,17 +36,17 @@ export class Meta {
         return this
     }
 
-    setData(data: IJson): Meta {
+    setData(data: IJsonObject): Meta {
         this.data = data
         return this
     }
 
-    getData(): IJson {
+    getData(): IJsonObject {
         return this.data
     }
 
     addTimestamp(): Meta {
-        this.timestamp = FirebaseService.core.timestamp()
+        this.timestamp = FirebaseProvider.timestamp()
         return this
     }
 
@@ -63,28 +63,28 @@ export class Meta {
         this.created = created
     }
 
-    static nameData(name: string): IJson {
+    static nameData(name: string): IJsonObject {
         return {
             [Keys.Name]: name
         }
     }
 
-    static imageURLData(imageURL: string): IJson {
+    static imageURLData(imageURL: string): IJsonObject {
         return {
             [Keys.ImageURL]: imageURL
         }
     }
 
-    static dataData(data: IJson): IJson {
+    static dataData(data: IJsonObject): IJsonObject {
         return {
             [Keys.Data]: data
         }
     }
 
-    toData(includeTimestamp = false): IJson {
-        const data: IJson = {}
+    toData(includeTimestamp = false): IJsonObject {
+        const data: IJsonObject = {}
 
-        if (name != null) {
+        if (this.name != null) {
             data[Keys.Name] = this.name
         }
         if (this.imageURL != null) {
@@ -102,7 +102,7 @@ export class Meta {
         return data
     }
 
-    protected static wrap(map: IJson): IJson {
+    protected static wrap(map: IJsonObject): IJsonObject {
         return {
             [Keys.Meta]: map
         }
@@ -112,7 +112,7 @@ export class Meta {
         return new Meta(this.name, this.imageURL, this.data, this.created)
     }
 
-    static from(name: string, imageURL: string, data?: IJson): Meta {
+    static from(name: string, imageURL: string, data?: IJsonObject): Meta {
         return new Meta(name, imageURL, data)
     }
 

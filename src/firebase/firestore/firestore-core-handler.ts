@@ -5,6 +5,7 @@ import { filter, map } from 'rxjs/operators'
 import { DataProvider, User } from '../../chat/user'
 import { EventType } from '../../events/event-type'
 import { ListEvent } from '../../events/list-event'
+import { SendableEvent } from '../../events/sendable-event'
 import { Consumer } from '../../interfaces/consumer'
 import { ISendable } from '../../interfaces/sendable'
 import { Sendable } from '../../message/sendable'
@@ -28,7 +29,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             const ds = change.doc
             if (ds.exists) {
                 const type = FirestoreCoreHandler.typeForDocumentChange(change)
-                return new ListEvent(ds.id, ds.data(), type)
+                return new ListEvent(ds.id, ds.data({ serverTimestamps: 'estimate' }), type)
             }
         }), filter(c => !!c)) as Observable<ListEvent>
     }
@@ -77,39 +78,39 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return this.runBatch(batch)
     }
 
-    messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable> {
+    async loadMoreMessages(messagesPath: Path, fromDate: Date, toDate: Date, limit?: number): Promise<ISendable[]> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
         if (fromDate) {
-            query = query.where(Keys.Date, '>', fromDate);
+            query = query.where(Keys.Date, '>', fromDate)
         }
         if (toDate) {
-            query = query.where(Keys.Date, '<', toDate);
-        }
-        if (limit) {
-            query = query.limit(limit);
+            query = query.where(Keys.Date, '<=', toDate)
         }
 
-        return new Observable<ISendable>(emitter => {
-            (async () => {
-                try {
-                    const snapshot = await new RxFirestore().get(query)
-                    if (snapshot) {
-                        for (const dc of snapshot.docChanges()) {
-                            const ds = dc.doc
-                            // Add the message
-                            if (ds.exists && dc.type === 'added') {
-                                const sendable = new Sendable(ds.id, ds.data())
-                                emitter.next(sendable)
-                            }
-                        }
-                    }
-                } catch (err) {
-                    emitter.error(err)
+        if (limit) {
+            if (fromDate) {
+                query = query.limit(limit)
+            }
+            if (toDate) {
+                query = query.limitToLast(limit)
+            }
+        }
+
+        const querySnapshot = await new RxFirestore().get(query)
+        const sendables = new Array<ISendable>()
+        if (!querySnapshot.empty) {
+            for (const docChange of querySnapshot.docChanges()) {
+                const docSnapshot = docChange.doc
+                // Add the message
+                if (docSnapshot.exists && docChange.type === 'added') {
+                    const sendable = new Sendable(docSnapshot.id, docSnapshot.data())
+                    sendables.push(sendable)
                 }
-            })()
-        })
+            }
+        }
+        return sendables
     }
 
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
@@ -136,29 +137,28 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     /**
-     * Start listening to the current message reference and pass the messages to the events
+     * Start listening to the current errorMessage reference and pass the messages to the events
      * @param newerThan only listen for messages after this date
-     * @return a events of message results
+     * @return a events of errorMessage results
      */
-    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<ISendable> {
+    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<SendableEvent> {
         let query = Ref.collection(messagesPath) as firebase.firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
-        if (newerThan) {
+        if (newerThan != null) {
             query = query.where(Keys.Date, '>', newerThan)
         }
         query.limit(limit)
 
-        return new RxFirestore().onQuery(query)
-            .pipe(map(change => {
-                const ds = change.doc
-                if (change.type === 'added') {
-                    if (ds.exists) {
-                        return new Sendable(ds.id, ds.data())
-                    }
-                }
-            }))
-            .pipe(filter(s => !!s)) as Observable<ISendable>
+        const $docChanges = new RxFirestore().onQuery(query)
+        const $sendableEvents = $docChanges.pipe(map(docChange => {
+            const docSnapshot = docChange.doc
+            if (docSnapshot.exists) {
+                const sendable = new Sendable(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' }))
+                return new SendableEvent(sendable, FirestoreCoreHandler.typeForDocumentChange(docChange))
+            }
+        }))
+        return $sendableEvents.pipe(filter(s => !!s)) as Observable<SendableEvent>
     }
 
     timestamp() {

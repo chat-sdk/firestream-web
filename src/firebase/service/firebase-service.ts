@@ -4,12 +4,11 @@ import { FirestoreChatHandler } from '../firestore/firestore-chat-handler'
 import { FirestoreCoreHandler } from '../firestore/firestore-core-handler'
 import { FirebaseChatHandler } from './firebase-chat-handler'
 import { FirebaseCoreHandler } from './firebase-core-handler'
+import { FirebaseProvider } from './firebase-provider'
 
 export class FirebaseService {
 
     private static instance: FirebaseService
-
-    private _app?: app.App
 
     protected _core?: FirebaseCoreHandler
     protected _chat?: FirebaseChatHandler
@@ -22,15 +21,15 @@ export class FirebaseService {
     }
 
     static setApp(app?: app.App) {
-        this.shared._app = app!
+        FirebaseProvider.setApp(app)
     }
 
     static get app(): app.App | undefined {
-        return this.shared._app
+        return FirebaseProvider.app
     }
 
     static get user(): User | undefined {
-        return this.shared._app?.auth().currentUser || undefined
+        return FirebaseProvider.user
     }
 
     /**
@@ -38,10 +37,7 @@ export class FirebaseService {
      * @throws if no user is authenticated
      */
     static get userId(): string {
-        if (!this.user) {
-            throw new Error('User is not authenticated')
-        }
-        return this.user.uid
+        return FirebaseProvider.userId
     }
 
     static set core(coreHandler: FirebaseCoreHandler) {

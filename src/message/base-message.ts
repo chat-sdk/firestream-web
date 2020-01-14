@@ -1,12 +1,13 @@
 import { IBaseMessage } from '../interfaces/base-message'
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
+import { SendableType } from '../types/sendable-types'
 
 export class BaseMessage implements IBaseMessage {
 
-    from = ''
-    date = new Date()
-    body: IJson = {}
-    type = ''
+    protected from = ''
+    protected date = new Date()
+    protected body: IJsonObject = {}
+    protected type = ''
 
     getFrom(): string {
         return this.from
@@ -24,11 +25,11 @@ export class BaseMessage implements IBaseMessage {
         this.date = date
     }
 
-    getBody(): IJson {
+    getBody(): IJsonObject {
         return this.body
     }
 
-    setBody(body: IJson) {
+    setBody(body: IJsonObject) {
         this.body = body
     }
 
@@ -38,6 +39,10 @@ export class BaseMessage implements IBaseMessage {
 
     setType(type: string) {
         this.type = type
+    }
+
+    isType(type: SendableType) {
+        return this.getType() === type.get()
     }
 
 }

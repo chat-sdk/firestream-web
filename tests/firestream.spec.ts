@@ -4,11 +4,12 @@ import 'firebase/firestore'
 
 import { initializeApp } from 'firebase/app'
 
-import { FireStream } from '../src/firestream'
 import { User } from '../src/chat/user'
 import { ConnectionEventType } from '../src/events/connection-event'
 import { EventType } from '../src/events/event-type'
+import { FireStream } from '../src/firestream'
 import { ContactType } from '../src/types/contact-type'
+import { RoleType } from '../src/types/role-type'
 import { firebaseConfig } from './firebase-config'
 
 const app = initializeApp(firebaseConfig)
@@ -25,23 +26,24 @@ const connect = async () => {
     })
 }
 
-const getTestUser = () => {
-    return new User('t2MwmuyrDGXV2gQyOo54P0Djdsn2')
-}
+const testUserJohn = new User('13k1gXOyO0NG41HpQnO4yOplRQL2', RoleType.watcher())
+const testUserAlex = new User('4qnJbkDFMbaKkmYcS7GTQvhsxHE3', RoleType.admin())
+const testUserMike = new User('utSRkZHrNghKKRFlptTzziqqM7I3', RoleType.banned())
+const testUsers = [testUserJohn, testUserAlex, testUserMike]
 
 describe('perform tests', function() {
     this.timeout(10000)
-    const testUser = getTestUser()
+    
     const connected = connect()
 
     it('add contact', async () => {
         await connected
-        await FireStream.shared.addContact(testUser, ContactType.contact())
+        await FireStream.shared.addContact(testUserJohn, ContactType.contact())
 
         const contacts = FireStream.shared.getContacts()
         if (contacts.length !== 1) {
             throw new Error('contacts size must be 1')
-        } else if (!contacts[0].equals(testUser)) {
+        } else if (!contacts[0].equals(testUserJohn)) {
             throw new Error('correct user not added to contacts')
         }
     })
@@ -50,8 +52,8 @@ describe('perform tests', function() {
         await connected
         return new Promise((resolve, reject) => {
             FireStream.shared.getContactEvents().allEvents().subscribe(event => {
-                if (event.type === EventType.Added) {
-                    if (event.user.equals(testUser)) {
+                if (event.typeIs(EventType.Added)) {
+                    if (event.user.equals(testUserJohn)) {
                         resolve()
                     } else {
                         reject(new Error('wrong user added'))
@@ -65,7 +67,7 @@ describe('perform tests', function() {
 
     it('delete contact', async () => {
         await connected
-        await FireStream.shared.removeContact(testUser)
+        await FireStream.shared.removeContact(testUserJohn)
 
         const contacts = FireStream.shared.getContacts()
         if (contacts.length !== 0) {
@@ -76,11 +78,9 @@ describe('perform tests', function() {
     it('get contact removed', async () => {
         await connected
         return new Promise((resolve, reject) => {
-            FireStream.shared.getContactEvents().allEvents().subscribe(event => {
-                console.log('CONTACT EVENT:', event.type)
-                if (event.type === EventType.Removed) {
-                    console.log('SUCCESS')
-                    if (event.user.equals(testUser)) {
+            FireStream.shared.getContactEvents().sinceLastEvent().subscribe(event => {
+                if (event.typeIs(EventType.Removed)) {
+                    if (event.user.equals(testUserJohn)) {
                         resolve()
                     } else {
                         reject(new Error('wrong user removed'))
@@ -94,6 +94,47 @@ describe('perform tests', function() {
 
     it('create chat', async () => {
         await connected
+        const chatName = 'Test'
+        const chatImageUrl = 'https://chatsdk.co/wp-content/uploads/2017/01/image_message-407x389.jpg'
+        const customData = {
+            TestKey:  'TestValue',
+            Key2: 999,
+        }
+
+        const chat = await FireStream.shared.createChat(chatName, chatImageUrl, customData, testUsers)
+
+        if (chat.getName() !== chatName) {
+            throw new Error('Name mismatch')
+        }
+
+        if (chat.getImageURL() !== chatImageUrl) {
+            throw new Error('Image url mismatch')
+        }
+
+        if (!chat.getId()) {
+            throw new Error('Chat id not set')
+        }
+
+        if (chat.getCustomData()) {
+            if (JSON.stringify(chat.getCustomData()) !== JSON.stringify(customData)) {
+                throw new Error('Custom data value mismatch')
+            }
+        } else {
+            throw new Error('Custom data isType null')
+        }
+
+        for (const user of chat.getUsers()) {
+            for (const testUser of testUsers) {
+                if (user.equals(testUser) && !user.isMe()) {
+                    if (!user.roleType!.equals(testUser.roleType!)) {
+                        throw new Error('Role type mismatch')
+                    }
+                }
+            }
+            if (user.isMe() && !user.roleType!.equals(RoleType.owner())) {
+                throw new Error('Creator user not owner')
+            }
+        }
     })
 
     it('modify chat', async () => {

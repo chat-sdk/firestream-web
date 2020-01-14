@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 
 import { Meta } from '../../chat/meta'
 import { Consumer } from '../../interfaces/consumer'
-import { IJson } from '../../interfaces/json'
+import { IJsonObject, TJsonValue } from '../../interfaces/json'
 import { Path } from './path'
 
 export abstract class FirebaseChatHandler {
@@ -22,8 +22,8 @@ export abstract class FirebaseChatHandler {
      */
     abstract metaOn(path: Path): Observable<Meta>
 
-    abstract updateMeta(chatMetaPath: Path, meta: IJson): Promise<void>
+    abstract setMetaField(chatMetaPath: Path, key: string, value: TJsonValue): Promise<void>
 
-    abstract add(path: Path, data: IJson, newId?: Consumer<string>): Promise<string>
+    abstract add(path: Path, data: IJsonObject, newId?: Consumer<string>): Promise<string>
 
 }

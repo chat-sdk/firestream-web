@@ -10,7 +10,7 @@ import { RoleType } from '../types/role-type'
 import { TypingStateType } from '../types/typing-state-type'
 import { IAbstractChat } from './abstract-chat'
 import { Consumer } from './consumer'
-import { IJson } from './json'
+import { IJsonObject } from './json'
 import { ISendable } from './sendable'
 
 /**
@@ -61,7 +61,7 @@ export interface IChat extends IAbstractChat {
      * Get any custom data associated with the chat
      * @return custom data
      */
-    getCustomData(): IJson
+    getCustomData(): IJsonObject
 
     /**
      * Associate custom data with the chat - you can add your own
@@ -69,7 +69,7 @@ export interface IChat extends IAbstractChat {
      * @param data custom data to write
      * @return completion
      */
-    setCustomData(data: IJson): Promise<void>
+    setCustomData(data: IJsonObject): Promise<void>
 
     /**
      * Get a list of members of the chat
@@ -169,7 +169,7 @@ export interface IChat extends IAbstractChat {
      * chat is updated
      * @return observable
      */
-    getCustomDataChangedEvents(): Observable<IJson>
+    getCustomDataChangedEvents(): Observable<IJsonObject>
 
     /**
      * Get an observable which is called when the a user is added, removed or updated
@@ -183,14 +183,14 @@ export interface IChat extends IAbstractChat {
      * @param newId message's new ID before sending
      * @return completion
      */
-    sendMessageWithBody(body: IJson, newId?: Consumer<String>): Promise<void>
+    sendMessageWithBody(body: IJsonObject, newId?: Consumer<String>): Promise<void>
 
     /**
      * Send a custom message
      * @param body custom message data
      * @return completion
      */
-    sendMessageWithBody(body: IJson): Promise<void>
+    sendMessageWithBody(body: IJsonObject): Promise<void>
 
     /**
      * Send a text message

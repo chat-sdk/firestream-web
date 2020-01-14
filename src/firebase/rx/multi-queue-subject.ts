@@ -1,88 +1,63 @@
-import { merge, Observable, Observer, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-enum EventType {
-    Value,
-    Error,
-}
-
-interface IEvent<T> {
-    type: EventType,
-    value?: T
-    error?: any
-}
+import { BehaviorSubject, Observable, Observer, ReplaySubject, Subject } from 'rxjs'
+import { filter, map } from 'rxjs/operators'
 
 export interface IMultiQueueObservable<T> {
-    pastEvents(): Observable<T>
     newEvents(): Observable<T>
     allEvents(): Observable<T>
+    sinceLastEvent(): Observable<T>
 }
 
 export class MultiQueueSubject<T> implements Observer<T> {
 
-    protected queued = Array<IEvent<T>>()
-    protected events = new Subject<T>()
+    protected subject = new Subject<T>()
+    protected replaySubject = new ReplaySubject<T>()
+    protected behaviorSubject = new BehaviorSubject<T>((null as unknown) as T)
 
     next(value: T) {
-        if (this.events.observers.length > 0) {
-            this.events.next(value)
-        } else {
-            this.queued.push({ type: EventType.Value, value })
+        if (this.subject.observers.length > 0) {
+            this.subject.next(value)
         }
+        this.replaySubject.next(value)
+        this.behaviorSubject.next(value)
     }
 
-    error(error: any) {
-        if (this.events.observers.length > 0) {
-            this.events.error(error)
-        } else {
-            this.queued.push({ type: EventType.Error, error })
+    error(err: any) {
+        if (this.subject.observers.length > 0) {
+            this.subject.error(err)
         }
+        this.replaySubject.error(err)
+        this.behaviorSubject.error(err)
     }
 
     complete() {
-        this.events.complete()
-    }
-
-    pastEvents() {
-        return new Observable<T>(emitter => {
-            for (const event of this.queued) {
-                if (event.type === EventType.Value) {
-                    emitter.next(event.value)
-                }
-                if (event.type === EventType.Error) {
-                    emitter.error(event.error)
-                }
-            }
-            this.queued = new Array<IEvent<T>>()
-        })
+        this.subject.complete()
+        this.replaySubject.complete()
+        this.behaviorSubject.complete()
     }
 
     newEvents() {
-        return this.events.asObservable()
+        return this.subject.asObservable()
     }
 
     allEvents() {
-        return merge(this.pastEvents(), this.newEvents())
+        return this.replaySubject.asObservable()
+    }
+
+    sinceLastEvent() {
+        return this.behaviorSubject.pipe(filter(e => e != null))
     }
 
     map<S>(mapFunction: (value: T) => S) {
-        const subject = new MultiQueueSubject<S>()
-        subject.queued = this.queued.map(event => {
-            return {
-                type: event.type,
-                value: event.value && mapFunction(event.value),
-                error: event.error,
-            }
-        })
-        this.events.pipe(map(mapFunction)).subscribe(subject)
-        return subject
+        const multiQueueSubject = new MultiQueueSubject<S>()
+        this.replaySubject.pipe(map(mapFunction)).subscribe(multiQueueSubject)
+        return multiQueueSubject
     }
 
     hide(): IMultiQueueObservable<T> {
         return {
-            pastEvents: this.pastEvents,
             newEvents: this.newEvents,
             allEvents: this.allEvents,
+            sinceLastEvent: this.sinceLastEvent,
         }
     }
 

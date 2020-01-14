@@ -1,21 +1,25 @@
-import { ErrorObserver, Observable, Subscription } from 'rxjs'
+import { empty, ErrorObserver, Observable, Subscription } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 
 import { Config } from '../config'
+import { EventType } from '../events/event-type'
 import { ListEvent } from '../events/list-event'
+import { SendableEvent } from '../events/sendable-event'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Path } from '../firebase/service/path'
 import { IAbstractChat } from '../interfaces/abstract-chat'
 import { Consumer } from '../interfaces/consumer'
+import { ISendable } from '../interfaces/sendable'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Invitation } from '../message/invitation'
 import { Message } from '../message/message'
 import { Presence } from '../message/presence'
 import { TypingState } from '../message/typing-state'
 import { SendableType } from '../types/sendable-types'
+import { ArrayUtils } from '../utils/array-utils'
 import { Events } from './events'
 import { DataProvider, User } from './user'
-import { ISendable } from '../interfaces/sendable'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.
@@ -57,25 +61,38 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     }
 
     /**
-     * Start listening to the current message reference and retrieve all messages
-     * @return a events of message results
+     * Start listening to the current errorMessage reference and retrieve all messages
+     * @return a events of errorMessage results
      */
-    protected messagesOn(): Observable<ISendable>
+    protected messagesOn(): Observable<SendableEvent>
     /**
-     * Start listening to the current message reference and pass the messages to the events
+     * Start listening to the current errorMessage reference and pass the messages to the events
      * @param newerThan only listen for messages after this date
-     * @return a events of message results
+     * @return a events of errorMessage results
      */
-    protected messagesOn(newerThan: Date): Observable<ISendable>
-    protected messagesOn(newerThan?: Date): Observable<ISendable> {
-        const $sendables = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
-        $sendables.forEach(sendable => {
-            if (sendable) {
-                this.getSendableEvents().getSendables().next(sendable)
+    protected messagesOn(newerThan: Date): Observable<SendableEvent>
+    protected messagesOn(newerThan?: Date): Observable<SendableEvent> {
+        const $events = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
+        $events.forEach(event => {
+            const sendable = event.getSendable()
+            const previous = this.getSendable(sendable.getId())
+            if (event.typeIs(EventType.Added)) {
                 this.sendables.push(sendable)
             }
+            if (previous != null) {
+                if (event.typeIs(EventType.Modified)) {
+                    sendable.copyTo(previous);
+                }
+                if (event.typeIs(EventType.Removed)) {
+                    this.sendables = ArrayUtils.remove(this.sendables, previous)
+                }
+            }
+            this.getSendableEvents().getSendables().next(event)
         })
-        return $sendables
+        return $events.pipe(catchError(err => {
+            this.events.publishThrowable().next(err)
+            return empty()
+        }))
     }
 
     /**
@@ -83,10 +100,18 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param fromDate get messages from this date
      * @param toDate get messages until this date
      * @param limit limit the maximum number of messages
-     * @return a events of message results
+     * @return a events of errorMessage results
      */
-    messagesOnce(fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable> {
-        return FirebaseService.core.messagesOnce(this.messagesPath(), fromDate, toDate, limit)
+    loadMoreMessages(fromDate?: Date, toDate?: Date, limit?: number): Promise<ISendable[]> {
+        return FirebaseService.core.loadMoreMessages(this.messagesPath(), fromDate, toDate, limit)
+    }
+
+    loadMoreMessagesFrom(fromDate: Date, limit: number): Promise<ISendable[]> {
+        return this.loadMoreMessages(fromDate, undefined, limit)
+    }
+
+    loadMoreMessagesTo(toDate: Date, limit: number): Promise<ISendable[]> {
+        return this.loadMoreMessages(undefined, toDate, limit)
     }
 
     /**
@@ -213,33 +238,45 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
 
     /**
      * Convenience method to cast sendables and send them to the correct events
-     * @param sendable the base sendable
+     * @param event sendable event
      */
-    protected passMessageResultToStream(sendable: ISendable) {
+    protected passMessageResultToStream(event: SendableEvent) {
+        const sendable = event.getSendable()
 
-        if (sendable.type === SendableType.Message) {
-            this.events.getMessages().next(Message.fromSendable(sendable))
-        }
-        if (sendable.type === SendableType.DeliveryReceipt) {
-            this.events.getDeliveryReceipts().next(DeliveryReceipt.fromSendable(sendable))
-        }
-        if (sendable.type === SendableType.TypingState) {
-            this.events.getTypingStates().next(TypingState.fromSendable(sendable))
-        }
-        if (sendable.type === SendableType.Invitation) {
-            this.events.getInvitations().next(Invitation.fromSendable(sendable))
-        }
-        if (sendable.type === SendableType.Presence) {
-            this.events.getPresences().next(Presence.fromSendable(sendable))
+        // In general, we are mostly interested when messages are added
+        if (event.typeIs(EventType.Added)) {
+            if (sendable.isType(SendableType.message())) {
+                this.events.getMessages().next(Message.fromSendable(sendable))
+            }
+            if (sendable.isType(SendableType.deliveryReceipt())) {
+                this.events.getDeliveryReceipts().next(DeliveryReceipt.fromSendable(sendable))
+            }
+            if (sendable.isType(SendableType.typingState())) {
+                this.events.getTypingStates().next(TypingState.fromSendable(sendable))
+            }
+            if (sendable.isType(SendableType.invitation())) {
+                this.events.getInvitations().next(Invitation.fromSendable(sendable))
+            }
+            if (sendable.isType(SendableType.presence())) {
+                this.events.getPresences().next(Presence.fromSendable(sendable))
+            }
         }
 
     }
 
     getSendables(type?: SendableType): ISendable[] {
         if (type) {
-            return this.sendables.filter(sendable => sendable && sendable.type === type.get())
+            return this.sendables.filter(sendable => sendable.isType(type))
         } else {
             return this.sendables
+        }
+    }
+
+    getSendable(id: string): ISendable | undefined {
+        for (const sendable of this.sendables) {
+            if (sendable.getId() === id) {
+                return sendable
+            }
         }
     }
 

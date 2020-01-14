@@ -13,7 +13,7 @@ export class TypingState extends Sendable {
         }
     }
 
-    public getBodyType(): TypingStateType {
+    public getTypingStateType(): TypingStateType {
         return new TypingStateType(super.getBodyType())
     }
 

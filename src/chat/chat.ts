@@ -5,12 +5,16 @@ import { EventType } from '../events/event-type'
 import { UserEvent } from '../events/user-event'
 import { MessageStreamFilter } from '../filter/message-stream-filter'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
+import { FirebaseService } from '../firebase/service/firebase-service'
+import { Keys } from '../firebase/service/keys'
 import { Path } from '../firebase/service/path'
 import { Paths } from '../firebase/service/paths'
 import { IChat } from '../interfaces/chat'
 import { Consumer } from '../interfaces/consumer'
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
+import { ISendable } from '../interfaces/sendable'
 import { DeliveryReceipt } from '../message/delivery-receipt'
+import { Invitation } from '../message/invitation'
 import { Message } from '../message/message'
 import { TextMessage } from '../message/text-message'
 import { TypingState } from '../message/typing-state'
@@ -19,13 +23,11 @@ import { DeliveryReceiptType } from '../types/delivery-receipt-type'
 import { InvitationType } from '../types/invitation-type'
 import { RoleType } from '../types/role-type'
 import { TypingStateType } from '../types/typing-state-type'
+import { ArrayUtils } from '../utils/array-utils'
 import { AbstractChat } from './abstract-chat'
 import { Meta } from './meta'
-import { DataProvider, User } from './user'
-import { FirebaseService } from '../firebase/service/firebase-service'
 import { Send } from './send'
-import { Invitation } from '../message/invitation'
-import { ISendable } from '../interfaces/sendable'
+import { DataProvider, User } from './user'
 
 export class Chat extends AbstractChat implements IChat {
 
@@ -38,7 +40,7 @@ export class Chat extends AbstractChat implements IChat {
 
     protected nameChangedEvents = new BehaviorSubject<string>('')
     protected imageURLChangedEvents = new BehaviorSubject<string>('')
-    protected customDataChangedEvents = new BehaviorSubject<IJson>({})
+    protected customDataChangedEvents = new BehaviorSubject<IJsonObject>({})
 
     constructor(id: string, joined?: Date, meta?: Meta) {
         super()
@@ -67,10 +69,10 @@ export class Chat extends AbstractChat implements IChat {
 
         this.sm.add(this.listChangeOn(Paths.chatUsersPath(this.id)).subscribe(listEvent => {
             const userEvent = UserEvent.from(listEvent)
-            if (userEvent.type === EventType.Added) {
+            if (userEvent.typeIs(EventType.Added)) {
                 this.users.push(userEvent.user)
             }
-            if (userEvent.type === EventType.Removed) {
+            if (userEvent.typeIs(EventType.Removed)) {
                 this.users = this.users.filter(user => !user.equals(userEvent.user))
             }
             this.userEvents.next(userEvent)
@@ -105,7 +107,7 @@ export class Chat extends AbstractChat implements IChat {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getName() !== name) {
-            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.nameData(name))
+            await FirebaseService.chat.setMetaField(this.metaPath(), Keys.Name, name)
             this.meta.setName(name)
         }
     }
@@ -118,20 +120,20 @@ export class Chat extends AbstractChat implements IChat {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getImageURL() !== url) {
-            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.imageURLData(url))
+            await FirebaseService.chat.setMetaField(this.metaPath(), Keys.ImageURL, url)
             this.meta.setImageURL(name)
         }
     }
 
-    getCustomData(): IJson {
+    getCustomData(): IJsonObject {
         return this.meta.getData();
     }
 
-    async setCustomData(data: IJson): Promise<void> {
+    async setCustomData(data: IJsonObject): Promise<void> {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else {
-            await FirebaseService.chat.updateMeta(this.metaPath(), Meta.dataData(data))
+            await FirebaseService.chat.setMetaField(this.metaPath(), Paths.Data, data)
             this.meta.setData(data)
         }
     }
@@ -244,7 +246,7 @@ export class Chat extends AbstractChat implements IChat {
         return this.imageURLChangedEvents.asObservable()
     }
 
-    getCustomDataChangedEvents(): Observable<IJson> {
+    getCustomDataChangedEvents(): Observable<IJsonObject> {
         return this.customDataChangedEvents.asObservable()
     }
 
@@ -276,11 +278,11 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     markReceived(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.id)
+        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.getId())
     }
 
     markRead(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.id)
+        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.getId())
     }
 
     protected getMyRoleType(): RoleType {
@@ -326,17 +328,16 @@ export class Chat extends AbstractChat implements IChat {
         return new Error('member_permission_required')
     }
 
-    static async create(name: string, imageURL: string, users: User[]): Promise<Chat> {
-        const data = Meta.from(name, imageURL).toData(true)
-        const chatId = await FirebaseService.chat.add(Paths.chatsPath(), data)
-        const chat = new Chat(chatId, undefined, new Meta(name, imageURL))
+    static async create(name: string, imageURL: string, data?: IJsonObject, users?: User[]): Promise<Chat> {
+        const meta = Meta.from(name, imageURL, data).addTimestamp().wrap().toData(true)
+        const chatId = await FirebaseService.chat.add(Paths.chatsPath(), meta)
+        const chat = new Chat(chatId, undefined, new Meta(name, imageURL, data))
 
         // Make sure the current user is the owner
-        const usersToAdd = users.filter(user => !user.equals(User.currentUser()))
+        const usersToAdd = ArrayUtils.remove(users || [], User.currentUser())
         usersToAdd.push(User.currentUser(RoleType.owner()))
 
         await chat.addUsers(true, usersToAdd)
-        await chat.inviteUsers(users)
         return chat
     }
 

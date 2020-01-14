@@ -3,10 +3,11 @@ import { Keys } from '../firebase/service/keys'
 import { Event } from './event'
 import { EventType } from './event-type'
 import { ListEvent } from './list-event'
+import { IChat } from '../interfaces/chat'
 
 export class ChatEvent extends Event {
 
-    chat: Chat
+    protected chat: Chat
 
     constructor(chat: Chat, type: EventType) {
         super(type)
@@ -27,9 +28,13 @@ export class ChatEvent extends Event {
 
     static from(listEvent: ListEvent): ChatEvent {
         if (listEvent.get(Keys.Date) instanceof Date) {
-            return new ChatEvent(new Chat(listEvent.id, listEvent.get(Keys.Date)), listEvent.type)
+            return new ChatEvent(new Chat(listEvent.id, listEvent.get(Keys.Date)), listEvent.getType())
         }
-        return new ChatEvent(new Chat(listEvent.id), listEvent.type)
+        return new ChatEvent(new Chat(listEvent.id), listEvent.getType())
+    }
+
+    getChat(): IChat {
+        return this.chat
     }
 
 }

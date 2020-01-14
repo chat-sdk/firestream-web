@@ -30,12 +30,12 @@ export class UserEvent extends Event {
 
     static from(listEvent: ListEvent): UserEvent {
         if (typeof listEvent.get(Keys.Role) === 'string') {
-            return new UserEvent(new User(listEvent.id, new RoleType(listEvent.get(Keys.Role))), listEvent.type)
+            return new UserEvent(new User(listEvent.id, new RoleType(listEvent.get(Keys.Role))), listEvent.getType())
         }
         if (typeof listEvent.get(Keys.Type) === 'string') {
-            return new UserEvent(new User(listEvent.id, new ContactType(listEvent.get(Keys.Type))), listEvent.type)
+            return new UserEvent(new User(listEvent.id, new ContactType(listEvent.get(Keys.Type))), listEvent.getType())
         }
-        return new UserEvent(new User(listEvent.id), listEvent.type)
+        return new UserEvent(new User(listEvent.id), listEvent.getType())
     }
 
     getFireStreamUser(): FireStreamUser {

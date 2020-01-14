@@ -1,4 +1,4 @@
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
 import { ISendable } from '../interfaces/sendable'
 import { SendableType } from '../types/sendable-types'
 import { Sendable } from './sendable'
@@ -6,9 +6,9 @@ import { Sendable } from './sendable'
 export class Message extends Sendable {
 
     constructor()
-    constructor(body: IJson)
-    constructor(id: string, body: IJson)
-    constructor(arg1?: IJson | string, arg2?: IJson) {
+    constructor(body: IJsonObject)
+    constructor(id: string, body: IJsonObject)
+    constructor(arg1?: IJsonObject | string, arg2?: IJsonObject) {
         super()
         this.type = SendableType.Message
         if (typeof arg1 === 'string' && typeof arg2 === 'object') {

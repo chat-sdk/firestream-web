@@ -49,9 +49,43 @@ export interface IAbstractChat {
     getSendables(type: SendableType): ISendable[]
 
     /**
+     * Get a sendable for a particular ID
+     * @param id of sendable
+     * @return sendable or null
+     */
+    getSendable(id: string): ISendable | undefined
+
+    /**
      * Get access to the events object which provides access to observables for sendable events
      * @return events holder
      */
     getSendableEvents(): Events
+
+    /**
+     * Load a batch of historic messages
+     *
+     * @param fromDate load messages AFTER this date
+     * @param toDate load message TO AND INCLUDING this date
+     * @return a stream of messages
+     */
+    loadMoreMessages(fromDate: Date, toDate: Date): Promise<ISendable[]>
+
+    /**
+     * Load a batch of historic messages
+     *
+     * @param fromDate load messages AFTER this date
+     * @param limit the number of messages returned
+     * @return a stream of messages
+     */
+    loadMoreMessagesFrom(fromDate: Date, limit: number): Promise<ISendable[]>
+
+    /**
+     * Load a batch of historic messages
+     *
+     * @param toDate load message TO AND INCLUDING this date
+     * @param limit the number of messages returned
+     * @return a stream of messages
+     */
+    loadMoreMessagesTo(toDate: Date, limit: number): Promise<ISendable[]>
 
 }

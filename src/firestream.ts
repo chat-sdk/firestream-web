@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable } from 'rxjs'
-import { filter, flatMap } from 'rxjs/operators'
+import { filter, flatMap, map } from 'rxjs/operators'
 
 import { AbstractChat } from './chat/abstract-chat'
 import { Chat } from './chat/chat'
@@ -10,6 +10,8 @@ import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
 import { UserEvent } from './events/user-event'
 import { MessageStreamFilter } from './filter/message-stream-filter'
+import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
+import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
 import { MultiQueueSubject } from './firebase/rx/multi-queue-subject'
 import { FirebaseService } from './firebase/service/firebase-service'
 import { Path } from './firebase/service/path'
@@ -17,7 +19,8 @@ import { Paths } from './firebase/service/paths'
 import { IChat } from './interfaces/chat'
 import { Consumer } from './interfaces/consumer'
 import { IFireStream } from './interfaces/firestream'
-import { IJson } from './interfaces/json'
+import { IJsonObject } from './interfaces/json'
+import { ISendable } from './interfaces/sendable'
 import { DeliveryReceipt } from './message/delivery-receipt'
 import { Invitation } from './message/invitation'
 import { Message } from './message/message'
@@ -30,13 +33,10 @@ import { InvitationType } from './types/invitation-type'
 import { PresenceType } from './types/presence-type'
 import { SendableType } from './types/sendable-types'
 import { TypingStateType } from './types/typing-state-type'
-import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
-import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
-import { ISendable } from './interfaces/sendable'
 
 export class FireStream extends AbstractChat implements IFireStream {
 
-    private static instance: FireStream
+    private static instance: IFireStream
 
     protected contacts = new Array<User>()
     protected blocked = new Array<User>()
@@ -47,7 +47,7 @@ export class FireStream extends AbstractChat implements IFireStream {
 
     protected connectionEvents = new BehaviorSubject<ConnectionEvent>(((null as unknown) as ConnectionEvent))
 
-    static get shared() {
+    static get shared(): IFireStream {
         if (!this.instance) {
             this.instance = new FireStream()
         }
@@ -103,14 +103,15 @@ export class FireStream extends AbstractChat implements IFireStream {
         // MESSAGE DELETION
 
         // We always delete typing state and presence messages
-        let stream$ = this.getSendableEvents().getSendables().allEvents()
+        let $streamEvents = this.getSendableEvents().getSendables().allEvents()
         if (!this.config.deleteMessagesOnReceipt) {
-            stream$ = stream$.pipe(
-                filter(MessageStreamFilter.bySendableType(SendableType.typingState(), SendableType.presence()))
+            $streamEvents = $streamEvents.pipe(
+                filter(MessageStreamFilter.eventBySendableType(SendableType.typingState(), SendableType.presence()))
             )
         }
         // If deletion is enabled, we don't filter so we delete all the message types
-        this.sm.add(stream$.pipe(flatMap(this.deleteSendable)).subscribe())
+        const $sendables = $streamEvents.pipe(map(event => event.getSendable()))
+        this.sm.add($sendables.pipe(flatMap(this.deleteSendable)).subscribe())
 
         // DELIVERY RECEIPTS
 
@@ -123,7 +124,7 @@ export class FireStream extends AbstractChat implements IFireStream {
                 // If message deletion is disabled, instead mark the message as received. This means
                 // that when we add a listener, we only get new messages
                 if (!this.config.deleteMessagesOnReceipt) {
-                    await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), message.id)
+                    await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), message.getId())
                 }
             } catch (err) {
                 this.error(err)
@@ -143,10 +144,10 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         this.sm.add(this.listChangeOn(Paths.blockedPath()).subscribe(listEvent => {
             const ue = UserEvent.from(listEvent)
-            if (ue.type == EventType.Added) {
+            if (ue.typeIs(EventType.Added)) {
                 this.blocked.push(ue.user)
             }
-            if (ue.type == EventType.Removed) {
+            if (ue.typeIs(EventType.Removed)) {
                 this.blocked = this.blocked.filter(user => !user.equals(ue.user))
             }
             this.blockedEvents.next(ue)
@@ -156,10 +157,10 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         this.sm.add(this.listChangeOn(Paths.contactsPath()).subscribe(listEvent => {
             const ue = UserEvent.from(listEvent)
-            if (ue.type == EventType.Added) {
+            if (ue.typeIs(EventType.Added)) {
                 this.contacts.push(ue.user)
             }
-            else if (ue.type == EventType.Removed) {
+            else if (ue.typeIs(EventType.Removed)) {
                 this.contacts = this.contacts.filter(user => !user.equals(ue.user))
             }
             this.contactEvents.next(ue)
@@ -169,13 +170,13 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         this.sm.add(this.listChangeOn(Paths.userChatsPath()).subscribe(listEvent => {
             const chatEvent = ChatEvent.from(listEvent)
-            const chat = chatEvent.chat
-            if (chatEvent.type == EventType.Added) {
+            const chat = chatEvent.getChat()
+            if (chatEvent.typeIs(EventType.Added)) {
                 chat.connect()
                 this.chats.push(chat)
                 this.chatEvents.next(chatEvent)
             }
-            else if (chatEvent.type == EventType.Removed) {
+            else if (chatEvent.typeIs(EventType.Removed)) {
                 chat.leave()
                     .then(() => {
                         this.chats = this.chats.filter(c => c.getId() !== chat.getId())
@@ -208,7 +209,7 @@ export class FireStream extends AbstractChat implements IFireStream {
     //
 
     deleteSendable(sendable: ISendable): Promise<void> {
-        return super.deleteSendableAtPath(Paths.messagePath(sendable.id))
+        return super.deleteSendableAtPath(Paths.messagePath(sendable.getId()))
     }
 
     sendPresence(userId: string, type: PresenceType): Promise<void> {
@@ -223,26 +224,10 @@ export class FireStream extends AbstractChat implements IFireStream {
         return this.sendToPath(Paths.messagesPath(toUserId), sendable, newId)
     }
 
-    /**
-     * Send a delivery receipt to a user. If delivery receipts are enabled,
-     * a 'received' status will be returned as soon as a message is delivered
-     * and then you can then manually send a 'read' status when the user
-     * actually reads the message
-     * @param userId - the recipient user id
-     * @param type - the status getBodyType
-     * @return - subscribe to get a completion, error update from the method
-     */
     sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: string, newId?: Consumer<string>): Promise<void> {
         return this.send(userId, new DeliveryReceipt(type, messageId), newId)
     }
 
-    /**
-     * Send a typing indicator update to a user. This should be sent when the user
-     * starts or stops typing
-     * @param userId - the recipient user id
-     * @param type - the status getBodyType
-     * @return - subscribe to get a completion, error update from the method
-     */
     sendTypingIndicator(userId: string, type: TypingStateType, newId?: Consumer<string>): Promise<void> {
         return this.send(userId, new TypingState(type), newId)
     }
@@ -251,7 +236,7 @@ export class FireStream extends AbstractChat implements IFireStream {
         return this.send(userId, new TextMessage(text), newId)
     }
 
-    sendMessageWithBody(userId: string, body: IJson, newId?: Consumer<string>): Promise<void> {
+    sendMessageWithBody(userId: string, body: IJsonObject, newId?: Consumer<string>): Promise<void> {
         return this.send(userId, new Message(body), newId)
     }
 
@@ -296,8 +281,15 @@ export class FireStream extends AbstractChat implements IFireStream {
     // Chats
     //
 
-    async createChat(name: string, avatarURL: string, users: User[]): Promise<Chat> {
-        const chat = await Chat.create(name, avatarURL, users)
+    createChat(name: string, imageURL: string, users: User[]): Promise<IChat>
+    createChat(name: string, imageURL: string, customData: IJsonObject, users?: User[]): Promise<IChat>
+    async createChat(name: string, avatarURL: string, arg3: User[] | IJsonObject, users?: User[]): Promise<IChat> {
+        let chat: IChat
+        if (Array.isArray(arg3)) {
+            chat = await Chat.create(name, avatarURL, undefined, arg3)
+        } else {
+            chat = await Chat.create(name, avatarURL, arg3, users)
+        }
         await this.joinChat(chat)
         return chat
     }
@@ -327,7 +319,7 @@ export class FireStream extends AbstractChat implements IFireStream {
      * @return completion
      */
     markRead(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(message.from, DeliveryReceiptType.read(), message.id)
+        return this.sendDeliveryReceipt(message.getFrom(), DeliveryReceiptType.read(), message.getId())
     }
 
     /**
@@ -335,7 +327,7 @@ export class FireStream extends AbstractChat implements IFireStream {
      * @return completion
      */
     markReceived(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(message.from, DeliveryReceiptType.received(), message.id)
+        return this.sendDeliveryReceipt(message.getFrom(), DeliveryReceiptType.received(), message.getId())
     }
 
     //
@@ -352,6 +344,10 @@ export class FireStream extends AbstractChat implements IFireStream {
 
     getContactEvents(): MultiQueueSubject<UserEvent> {
         return this.contactEvents
+    }
+
+    getConnectionEvents(): Observable<ConnectionEvent> {
+        return this.connectionEvents.asObservable()
     }
 
     //
@@ -382,10 +378,6 @@ export class FireStream extends AbstractChat implements IFireStream {
         return FirebaseService.shared
     }
 
-    getConnectionEvents(): Observable<ConnectionEvent> {
-        return this.connectionEvents.asObservable()
-    }
-
 }
 
 // Namespace
@@ -397,14 +389,14 @@ export class FireStream extends AbstractChat implements IFireStream {
  * FireStream.shared().sendMessage()
  */
 export namespace Fire {
-    export const Stream = FireStream.shared
-    export const api = () => FireStream.shared
+    export const Stream: IFireStream = FireStream.shared
+    export const api = (): IFireStream => FireStream.shared
 }
 
 /**
  * Even more convenient! Just F.S.sendMessage()!
  */
 export namespace F {
-    export const S = FireStream.shared
-    export const ire = FireStream.shared
+    export const S: IFireStream = FireStream.shared
+    export const ire: IFireStream = FireStream.shared
 }

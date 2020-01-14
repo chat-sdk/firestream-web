@@ -1,4 +1,4 @@
-import { FirebaseService } from '../firebase/service/firebase-service'
+import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
 import { ContactType } from '../types/contact-type'
 import { RoleType } from '../types/role-type'
@@ -25,25 +25,22 @@ export class User {
         }
     }
 
-    equals(user: any) {
-        if (user instanceof User) {
-            return user.id === this.id
-        }
-        return false
+    equals(user: User) {
+        return user.id === this.id
     }
 
     isMe(): boolean {
-        return this.id === FirebaseService.userId
+        return this.id === FirebaseProvider.userId
     }
 
     static currentUser(role?: RoleType): User {
-        return new User(FirebaseService.userId, role)
+        return new User(FirebaseProvider.userId, role)
     }
 
     static dateDataProvider(): DataProvider {
         return {
             data: user => ({
-                [Keys.Date]: FirebaseService.core.timestamp()
+                [Keys.Date]: FirebaseProvider.timestamp()
             })
         }
     }

@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators'
 import { Meta } from '../../chat/meta'
 import { User } from '../../chat/user'
 import { Consumer } from '../../interfaces/consumer'
-import { IJson } from '../../interfaces/json'
+import { IJsonObject, TJsonValue } from '../../interfaces/json'
 import { FirebaseChatHandler } from '../service/firebase-chat-handler'
 import { Keys } from '../service/keys'
 import { Path } from '../service/path'
@@ -22,24 +22,9 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         return new RxFirestore().set(Ref.document(Paths.userGroupChatPath(chatId)), User.dateDataProvider().data())
     }
 
-    updateMeta(chatMetaPath: Path, meta: IJson): Promise<void> {
+    setMetaField(chatMetaPath: Path, key: string, value: TJsonValue): Promise<void> {
         chatMetaPath.normalizeForDocument()
-
-        const keys = Object.keys(meta)
-
-        let toWrite: IJson = { ...meta }
-        const remainder = chatMetaPath.getRemainder()
-        if (remainder) {
-            toWrite = this.wrap(remainder, meta);
-            keys.push(remainder)
-        }
-        return new RxFirestore().update(Ref.document(chatMetaPath), toWrite, keys)
-    }
-
-    protected wrap(key: string, map: IJson): IJson {
-        return {
-            [key]: map
-        }
+        return new RxFirestore().update(Ref.document(chatMetaPath), { [key]: value })
     }
 
     metaOn(path: Path): Observable<Meta> {
@@ -49,7 +34,7 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
             const base = Keys.Meta + '.'
 
             meta.setName(snapshot.get(base + Keys.Name))
-            meta.setCreated(snapshot.get(base + Keys.Created))
+            meta.setCreated(snapshot.get(base + Keys.Created, { serverTimestamps: 'estimate' }))
             meta.setImageURL(snapshot.get(base + Keys.ImageURL))
             meta.setData(snapshot.get(base + Keys.Data))
 
@@ -57,7 +42,7 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         }))
     }
 
-    async add(path: Path, data: IJson, newId?: Consumer<string>): Promise<string> {
+    async add(path: Path, data: IJsonObject, newId?: Consumer<string>): Promise<string> {
         return new RxFirestore().add(Ref.collection(path), data, newId)
     }
 

@@ -1,20 +1,20 @@
-import { FirebaseService } from '../firebase/service/firebase-service'
+import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
 import { ISendable } from '../interfaces/sendable'
 import { BaseType } from '../types/base-type'
 import { BaseMessage } from './base-message'
 
 export class Sendable extends BaseMessage implements ISendable {
 
-    id!: string
+    protected id!: string
 
-    constructor(id?: string, data?: IJson) {
+    constructor(id?: string, data?: IJsonObject) {
         super()
 
         if (!id || !data) {
             try {
-                this.from = FirebaseService.userId
+                this.from = FirebaseProvider.userId
             } catch (err) {
                 console.error(err)
             }
@@ -30,11 +30,15 @@ export class Sendable extends BaseMessage implements ISendable {
             this.date = data[Keys.Date] as Date
         }
         if (typeof data[Keys.Body] === 'object') {
-            this.body = data[Keys.Body] as IJson
+            this.body = data[Keys.Body] as IJsonObject
         }
         if (typeof data[Keys.Type] === 'string') {
             this.type = data[Keys.Type] as string
         }
+    }
+
+    valid(): boolean {
+        return this.from != null && this.date != null && this.body != null && this.type != null
     }
 
     setBodyType(type: BaseType) {
@@ -58,21 +62,42 @@ export class Sendable extends BaseMessage implements ISendable {
     }
 
     copyTo<T extends ISendable>(sendable: T): T {
-        sendable.id = this.id
-        sendable.from = this.from
-        sendable.body = this.body
-        sendable.date = this.date
+        sendable.setId(this.id)
+        sendable.setFrom(this.from)
+        sendable.setBody(this.body)
+        sendable.setDate(this.date)
         return sendable
     }
 
-    toData(): IJson {
+    toBaseMessage(): BaseMessage {
+        const message = new BaseMessage()
+        message.setFrom(this.from)
+        message.setBody(this.body)
+        message.setDate(this.date)
+        message.setType(this.type)
+        return message
+    }
+
+    toData(): IJsonObject {
         const data = {
             [Keys.From]: this.from,
             [Keys.Body]: this.body,
-            [Keys.Date]: FirebaseService.core.timestamp(),
+            [Keys.Date]: FirebaseProvider.timestamp(),
             [Keys.Type]: this.type,
         }
         return data
+    }
+
+    setId(id: string) {
+        this.id = id
+    }
+
+    getId(): string {
+        return this.id
+    }
+
+    equals(message: ISendable): boolean {
+        return this.getId() === message.getId()
     }
 
 }

@@ -1,5 +1,5 @@
 import { Keys } from '../firebase/service/keys'
-import { IJson } from '../interfaces/json'
+import { IJsonObject } from '../interfaces/json'
 import { BaseType } from './base-type'
 
 export class RoleType extends BaseType {
@@ -57,7 +57,7 @@ export class RoleType extends BaseType {
         return new RoleType('')
     }
 
-    data(): IJson {
+    data(): IJsonObject {
         return { [Keys.Role]: this.get() }
     }
 

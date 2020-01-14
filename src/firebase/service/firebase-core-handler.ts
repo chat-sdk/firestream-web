@@ -2,9 +2,10 @@ import { Observable } from 'rxjs'
 
 import { DataProvider, User } from '../../chat/user'
 import { ListEvent } from '../../events/list-event'
+import { SendableEvent } from '../../events/sendable-event'
 import { Consumer } from '../../interfaces/consumer'
-import { Path } from './path'
 import { ISendable } from '../../interfaces/sendable'
+import { Path } from './path'
 
 export abstract class FirebaseCoreHandler {
 
@@ -65,14 +66,14 @@ export abstract class FirebaseCoreHandler {
     abstract updateUsers(path: Path, dataProvider: DataProvider, users: User[]): Promise<void>
 
     /**
-     * Get a batch of messages once
+     * Get a updateBatch of messages once
      * @param messagesPath
      * @param fromDate get messages from this date
      * @param toDate get messages until this date
      * @param limit limit the maximum number of messages
-     * @return a events of message results
+     * @return a events of errorMessage results
      */
-    abstract messagesOnce(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Observable<ISendable>
+    abstract loadMoreMessages(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Promise<ISendable[]>
 
     /**
      * This method gets the date of the last delivery receipt that we sent - i.e. the
@@ -83,13 +84,13 @@ export abstract class FirebaseCoreHandler {
     abstract dateOfLastSentMessage(messagesPath: Path): Promise<Date>
 
     /**
-     * Start listening to the current message reference and pass the messages to the events
+     * Start listening to the current errorMessage reference and pass the messages to the events
      * @param messagesPath
      * @param newerThan only listen for messages after this date
      * @param limit limit the maximum number of historic messages
-     * @return a events of message results
+     * @return a events of errorMessage results
      */
-    abstract messagesOn(messagesPath: Path, newerTha?: Date, limit?: number): Observable<ISendable>
+    abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<SendableEvent>
 
     /**
      * Return a Firebase timestamp object

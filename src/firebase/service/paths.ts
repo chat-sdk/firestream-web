@@ -1,5 +1,5 @@
 import { Config } from '../../config'
-import { FirebaseService } from './firebase-service'
+import { FirebaseProvider } from './firebase-provider'
 import { Keys } from './keys'
 import { Path } from './path'
 
@@ -40,7 +40,7 @@ export class Paths extends Keys {
     }
 
     protected static currentUserId(): string {
-        return FirebaseService.userId
+        return FirebaseProvider.userId
     }
 
     static contactsPath(): Path {

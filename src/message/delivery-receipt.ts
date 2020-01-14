@@ -20,7 +20,7 @@ export class DeliveryReceipt extends Sendable {
         return this.getBodyString(DeliveryReceipt.MessageId)
     }
 
-    getBodyType(): DeliveryReceiptType {
+    getDeliveryReceiptType(): DeliveryReceiptType {
         return new DeliveryReceiptType(super.getBodyType())
     }
 

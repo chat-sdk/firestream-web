@@ -48,8 +48,8 @@ export class RxFirestore {
         return ref.set(data)
     }
 
-    update(ref: firebase.firestore.DocumentReference, data: firebase.firestore.DocumentData, mergeKeys: string[]): Promise<void> {
-        return ref.set(data, { mergeFields: mergeKeys })
+    update(ref: firebase.firestore.DocumentReference, data: firebase.firestore.DocumentData): Promise<void> {
+        return ref.update(data)
     }
 
     get(ref: firebase.firestore.DocumentReference): Promise<firebase.firestore.DocumentSnapshot>

@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs'
 
+import { SendableEvent } from '../events/sendable-event'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Invitation } from '../message/invitation'
@@ -7,7 +8,6 @@ import { Message } from '../message/message'
 import { Presence } from '../message/presence'
 import { TypingState } from '../message/typing-state'
 import { FireStreamMessage } from '../namespace/firestream-message'
-import { ISendable } from '../interfaces/sendable'
 
 export class Events {
 
@@ -17,7 +17,11 @@ export class Events {
     protected presences = new MultiQueueSubject<Presence>()
     protected invitations = new MultiQueueSubject<Invitation>()
 
-    protected sendables = new MultiQueueSubject<ISendable>()
+    /**
+     * The sendable event stream provides the most information. It passes a sendable event
+     * when will include the kind of action that has been performed.
+     */
+    protected sendables = new MultiQueueSubject<SendableEvent>()
 
     protected errors = new Subject<Error>()
 
@@ -33,7 +37,7 @@ export class Events {
      * @return events of messages
      */
     getFireStreamMessages(): MultiQueueSubject<FireStreamMessage> {
-        return this.messages.map(FireStreamMessage.fromMessage)
+        return this.messages.map(FireStreamMessage.fromSendable)
     }
 
     /**
@@ -52,7 +56,7 @@ export class Events {
         return this.typingStates
     }
 
-    getSendables(): MultiQueueSubject<ISendable> {
+    getSendables(): MultiQueueSubject<SendableEvent> {
         return this.sendables
     }
 

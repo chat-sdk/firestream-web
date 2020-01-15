@@ -28,6 +28,7 @@ import { AbstractChat } from './abstract-chat'
 import { Meta } from './meta'
 import { Send } from './send'
 import { DataProvider, User } from './user'
+import { FireStreamStore } from '../firestream-store'
 
 export class Chat extends AbstractChat implements IChat {
 
@@ -58,7 +59,7 @@ export class Chat extends AbstractChat implements IChat {
         console.log('Connect to chat:', this.id)        
 
         // If delivery receipts are enabled, send the delivery receipt
-        if (this.config.deliveryReceiptsEnabled) {
+        if (FireStreamStore.config.deliveryReceiptsEnabled) {
             this.sm.add(this.getSendableEvents()
                     .getMessages()
                     .allEvents()

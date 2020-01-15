@@ -1,5 +1,5 @@
-import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
+import { FireStreamStore } from '../firestream-store'
 import { IJsonObject } from '../interfaces/json'
 
 export class Meta {
@@ -46,7 +46,7 @@ export class Meta {
     }
 
     addTimestamp(): Meta {
-        this.timestamp = FirebaseProvider.timestamp()
+        this.timestamp = FireStreamStore.timestamp()
         return this
     }
 

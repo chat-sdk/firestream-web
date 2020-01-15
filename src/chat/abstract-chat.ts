@@ -20,6 +20,7 @@ import { SendableType } from '../types/sendable-types'
 import { ArrayUtils } from '../utils/array-utils'
 import { Events } from './events'
 import { DataProvider, User } from './user'
+import { FireStreamStore } from '../firestream-store'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.
@@ -43,15 +44,6 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     protected sendables = new Array<ISendable>()
 
     /**
-     * Current configuration
-     */
-    protected config = new Config()
-
-    constructor() {
-        
-    }
-
-    /**
      * Error handler method so we can redirect all errors to the error events
      * @param throwable - the events error
      * @throws Exception
@@ -72,7 +64,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      */
     protected messagesOn(newerThan: Date): Observable<SendableEvent>
     protected messagesOn(newerThan?: Date): Observable<SendableEvent> {
-        const $events = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, this.config.messageHistoryLimit)
+        const $events = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, FireStreamStore.config.messageHistoryLimit)
         $events.forEach(event => {
             const sendable = event.getSendable()
             const previous = this.getSendable(sendable.getId())

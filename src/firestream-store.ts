@@ -1,24 +1,38 @@
 import { app, User } from 'firebase/app'
 
-export class FirebaseProvider {
+import { Config } from './config'
 
-    private static instance: FirebaseProvider
+export class FireStreamStore {
+
+    private static instance: FireStreamStore
 
     private _app?: app.App
+    private _config?: Config
 
     static get shared() {
         if (!this.instance) {
-            this.instance = new FirebaseProvider()
+            this.instance = new FireStreamStore()
         }
         return this.instance
     }
 
     static setApp(app?: app.App) {
-        this.shared._app = app!
+        this.shared._app = app
     }
 
     static get app(): app.App | undefined {
         return this.shared._app
+    }
+
+    static setConfig(config?: Config) {
+        this.shared._config = config
+    }
+
+    static get config(): Config {
+        if (!this.shared._config) {
+            throw new Error('FireStreamStore.config needs to be set')
+        }
+        return this.shared._config
     }
 
     static get user(): User | undefined {

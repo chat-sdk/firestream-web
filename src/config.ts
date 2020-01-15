@@ -1,18 +1,4 @@
-export enum DatabaseType {
-    Firestore,
-    Realtime
-}
-
 export class Config {
-
-    private static instance: Config
-
-    static get shared() {
-        if (!this.instance) {
-            this.instance = new Config()
-        }
-        return this.instance
-    }
 
     /**
      * Should the framework automatically send a delivery receipt when
@@ -42,17 +28,58 @@ export class Config {
      * This will be the root of the FireStream Firebase database i.e.
      * /root/[sandbox]/users
      */
-    root = 'pepe'
+    protected root = 'firestream'
 
     /**
      * This will be the sandbox of the FireStream Firebase database i.e.
      * /root/[sandbox]/users
      */
-    sandbox = 'firestream'
+    protected sandbox = 'pepe'
 
     /**
      * Which database to use - Firestore or Realtime database
      */
-    database = DatabaseType.Firestore
+    database = Config.DatabaseType.Firestore
 
+    /**
+     * Should debug log messages be shown?
+     */
+    debugEnabled = false
+
+    setRoot(root: string) {
+        if (this.pathValid(this.root)) {
+            this.root = root;
+        } else {
+            throw new Error('R.string.error_invalid_path')
+        }
+    }
+
+    setSandbox(sandbox: string) {
+        if (this.pathValid(this.sandbox)) {
+            this.sandbox = sandbox;
+        } else {
+            throw new Error('R.string.error_invalid_path')
+        }
+    }
+
+    protected pathValid(path: string): boolean {
+        if (!path) return false
+        return /^[0-9A-Za-z_]+$/.test(path)
+    }
+
+    getRoot(): string {
+        return this.root
+    }
+
+    getSandbox(): string {
+        return this.sandbox
+    }
+
+}
+
+export namespace Config {
+    export enum DatabaseType {
+        Firestore,
+        Realtime
+    }
 }

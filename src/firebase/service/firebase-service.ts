@@ -1,10 +1,10 @@
 import { app, User } from 'firebase/app'
 
+import { FireStreamStore } from '../../firestream-store'
 import { FirestoreChatHandler } from '../firestore/firestore-chat-handler'
 import { FirestoreCoreHandler } from '../firestore/firestore-core-handler'
 import { FirebaseChatHandler } from './firebase-chat-handler'
 import { FirebaseCoreHandler } from './firebase-core-handler'
-import { FirebaseProvider } from './firebase-provider'
 
 export class FirebaseService {
 
@@ -21,15 +21,15 @@ export class FirebaseService {
     }
 
     static setApp(app?: app.App) {
-        FirebaseProvider.setApp(app)
+        FireStreamStore.setApp(app)
     }
 
     static get app(): app.App | undefined {
-        return FirebaseProvider.app
+        return FireStreamStore.app
     }
 
     static get user(): User | undefined {
-        return FirebaseProvider.user
+        return FireStreamStore.user
     }
 
     /**
@@ -37,7 +37,7 @@ export class FirebaseService {
      * @throws if no user is authenticated
      */
     static get userId(): string {
-        return FirebaseProvider.userId
+        return FireStreamStore.userId
     }
 
     static set core(coreHandler: FirebaseCoreHandler) {

@@ -1,6 +1,6 @@
 import { firestore } from 'firebase/app'
 
-import { FirebaseProvider } from '../service/firebase-provider'
+import { FireStreamStore } from '../../firestream-store'
 import { Path } from '../service/path'
 
 export class Ref {
@@ -38,9 +38,9 @@ export class Ref {
     }
 
     static db(): firestore.Firestore {
-        const app = FirebaseProvider.app
+        const app = FireStreamStore.app
         if (!app) {
-            throw new Error('FirebaseProvider.app returned undefined')
+            throw new Error('FireStreamStore.app returned undefined')
         }
         return app.firestore()
     }

@@ -1,5 +1,5 @@
-import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
+import { FireStreamStore } from '../firestream-store'
 import { IJsonObject } from '../interfaces/json'
 import { ISendable } from '../interfaces/sendable'
 import { BaseType } from '../types/base-type'
@@ -14,7 +14,7 @@ export class Sendable extends BaseMessage implements ISendable {
 
         if (!id || !data) {
             try {
-                this.from = FirebaseProvider.userId
+                this.from = FireStreamStore.userId
             } catch (err) {
                 console.error(err)
             }
@@ -82,7 +82,7 @@ export class Sendable extends BaseMessage implements ISendable {
         const data = {
             [Keys.From]: this.from,
             [Keys.Body]: this.body,
-            [Keys.Date]: FirebaseProvider.timestamp(),
+            [Keys.Date]: FireStreamStore.timestamp(),
             [Keys.Type]: this.type,
         }
         return data

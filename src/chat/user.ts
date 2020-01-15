@@ -1,5 +1,5 @@
-import { FirebaseProvider } from '../firebase/service/firebase-provider'
 import { Keys } from '../firebase/service/keys'
+import { FireStreamStore } from '../firestream-store'
 import { ContactType } from '../types/contact-type'
 import { RoleType } from '../types/role-type'
 
@@ -30,17 +30,17 @@ export class User {
     }
 
     isMe(): boolean {
-        return this.id === FirebaseProvider.userId
+        return this.id === FireStreamStore.userId
     }
 
     static currentUser(role?: RoleType): User {
-        return new User(FirebaseProvider.userId, role)
+        return new User(FireStreamStore.userId, role)
     }
 
     static dateDataProvider(): DataProvider {
         return {
             data: user => ({
-                [Keys.Date]: FirebaseProvider.timestamp()
+                [Keys.Date]: FireStreamStore.timestamp()
             })
         }
     }

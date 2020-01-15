@@ -4,7 +4,7 @@ import { filter, flatMap, map } from 'rxjs/operators'
 import { AbstractChat } from './chat/abstract-chat'
 import { Chat } from './chat/chat'
 import { User } from './chat/user'
-import { Config, DatabaseType } from './config'
+import { Config } from './config'
 import { ChatEvent } from './events/chat-event'
 import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
@@ -16,6 +16,7 @@ import { MultiQueueSubject } from './firebase/rx/multi-queue-subject'
 import { FirebaseService } from './firebase/service/firebase-service'
 import { Path } from './firebase/service/path'
 import { Paths } from './firebase/service/paths'
+import { FireStreamStore } from './firestream-store'
 import { IChat } from './interfaces/chat'
 import { Consumer } from './interfaces/consumer'
 import { IFireStream } from './interfaces/firestream'
@@ -59,15 +60,13 @@ export class FireStream extends AbstractChat implements IFireStream {
     initialize(app: firebase.app.App, config?: Config) {
         FirebaseService.setApp(app)
 
-        if (config) {
-            this.config = config
-        }
+        FireStreamStore.setConfig(config || new Config())
 
-        if (this.config.database == DatabaseType.Firestore && FirebaseService.app) {
+        if (FireStreamStore.config.database == Config.DatabaseType.Firestore && FirebaseService.app) {
             FirebaseService.core = new FirestoreCoreHandler(FirebaseService.app)
             FirebaseService.chat = new FirestoreChatHandler()
         }
-        if (this.config.database == DatabaseType.Realtime) {
+        if (FireStreamStore.config.database == Config.DatabaseType.Realtime) {
             // this.firebaseService = new RealtimeService()
         }
 
@@ -87,12 +86,17 @@ export class FireStream extends AbstractChat implements IFireStream {
     }
 
     isInitialized(): boolean {
-        return this.config != null
+        try {
+            return FireStreamStore.config != null
+        } catch (err) {
+            console.error(err.message)
+            return false
+        }
     }
 
     async connect(): Promise<void> {
-        if (this.config == null) {
-            throw new Error('You need to call Fire.Stream.initialize(…)')
+        if (!this.isInitialized()) {
+            throw new Error('You need to call FireStream.shared().initialize(…)')
         }
         if (FirebaseService.user == null) {
             throw new Error('Firebase must be authenticated to connect')
@@ -104,7 +108,7 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         // We always delete typing state and presence messages
         let $streamEvents = this.getSendableEvents().getSendables().allEvents()
-        if (!this.config.deleteMessagesOnReceipt) {
+        if (!FireStreamStore.config.deleteMessagesOnReceipt) {
             $streamEvents = $streamEvents.pipe(
                 filter(MessageStreamFilter.eventBySendableType(SendableType.typingState(), SendableType.presence()))
             )
@@ -118,12 +122,12 @@ export class FireStream extends AbstractChat implements IFireStream {
         this.sm.add(this.getSendableEvents().getMessages().allEvents().subscribe(async message => {
             try {
                 // If delivery receipts are enabled, send the delivery receipt
-                if (this.config.deliveryReceiptsEnabled) {
+                if (FireStreamStore.config.deliveryReceiptsEnabled) {
                     await this.markReceived(message)
                 }
                 // If message deletion is disabled, instead mark the message as received. This means
                 // that when we add a listener, we only get new messages
-                if (!this.config.deleteMessagesOnReceipt) {
+                if (!FireStreamStore.config.deleteMessagesOnReceipt) {
                     await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), message.getId())
                 }
             } catch (err) {
@@ -134,7 +138,7 @@ export class FireStream extends AbstractChat implements IFireStream {
         // INVITATIONS
 
         this.sm.add(this.getSendableEvents().getInvitations().allEvents().pipe(flatMap(invitation => {
-            if (this.config.autoAcceptChatInvite) {
+            if (FireStreamStore.config.autoAcceptChatInvite) {
                 return invitation.accept()
             }
             return Promise.resolve()
@@ -355,7 +359,7 @@ export class FireStream extends AbstractChat implements IFireStream {
     //
 
     protected dateOfLastDeliveryReceipt(): Promise<Date> {
-        if (this.config.deleteMessagesOnReceipt) {
+        if (FireStreamStore.config.deleteMessagesOnReceipt) {
             return Promise.resolve(new Date(0))
         } else {
             return super.dateOfLastDeliveryReceipt()
@@ -371,7 +375,7 @@ export class FireStream extends AbstractChat implements IFireStream {
     }
 
     getConfig(): Config {
-        return this.config
+        return FireStreamStore.config
     }
 
     getFirebaseService(): FirebaseService {

@@ -1,12 +1,11 @@
-import { Config } from '../../config'
-import { FirebaseProvider } from './firebase-provider'
+import { FireStreamStore } from '../../firestream-store'
 import { Keys } from './keys'
 import { Path } from './path'
 
 export class Paths extends Keys {
 
     static root(): Path {
-        return new Path([Config.shared.root, Config.shared.sandbox])
+        return new Path([FireStreamStore.config.getRoot(), FireStreamStore.config.getSandbox()])
     }
 
     static usersPath(): Path {
@@ -40,7 +39,7 @@ export class Paths extends Keys {
     }
 
     protected static currentUserId(): string {
-        return FirebaseProvider.userId
+        return FireStreamStore.userId
     }
 
     static contactsPath(): Path {

@@ -259,6 +259,13 @@ export interface IChat extends IAbstractChat {
     send(sendable: ISendable): Promise<void>
 
     /**
+     * Delete a sendable
+     * @param sendable to delete
+     * @return completion
+     */
+    deleteSendable(sendable: ISendable): Promise<void>
+
+    /**
      * Mark a message as received
      * @param message to mark as received
      * @return completion

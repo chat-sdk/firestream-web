@@ -301,10 +301,6 @@ export class Chat extends AbstractChat implements IChat {
         this.meta = meta
     }
 
-    protected testPermission(roleType: RoleType): boolean {
-        return roleType.test(this.getRoleTypeForUser(User.currentUser()))
-    }
-
     path(): Path {
         return Paths.chatPath(this.id)
     }
@@ -340,6 +336,18 @@ export class Chat extends AbstractChat implements IChat {
 
         await chat.addUsers(true, usersToAdd)
         return chat
+    }
+
+    protected testPermission(roleType: RoleType): boolean {
+        return roleType.test(this.getRoleTypeForUser(User.currentUser()))
+    }
+
+    public deleteSendable(arg: Path | ISendable): Promise<void> {
+        if (arg instanceof Path) {
+            return super.deleteSendable(arg)
+        } else {
+            return super.deleteSendable(this.messagesPath().child(arg.getId()))
+        }
     }
 
 }

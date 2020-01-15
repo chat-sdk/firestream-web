@@ -212,8 +212,12 @@ export class FireStream extends AbstractChat implements IFireStream {
     // Messages
     //
 
-    deleteSendable(sendable: ISendable): Promise<void> {
-        return super.deleteSendableAtPath(Paths.messagePath(sendable.getId()))
+    deleteSendable(arg: Path | ISendable): Promise<void> {
+        if (arg instanceof Path) {
+            return super.deleteSendable(arg)
+        } else {
+            return super.deleteSendable(Paths.messagePath(arg.getId()))
+        }
     }
 
     sendPresence(userId: string, type: PresenceType): Promise<void> {

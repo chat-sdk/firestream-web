@@ -10,8 +10,16 @@ export class ArrayUtils {
         }
     }
     
-    static remove<T extends Equals<T>>(list: T[], target: T): T[] {
-        return this.filter(list, target, true)
+    static remove<T extends Equals<T>>(list: T[], ...targets: T[]): T[] {
+        if (targets.length === 1) {
+            return this.filter(list, targets[0], true)
+        } else {
+            let filtered = [ ...list ]
+            for (const target of targets) {
+                filtered = this.filter(filtered, target, true)
+            }
+            return filtered
+        }
     }
 
 }

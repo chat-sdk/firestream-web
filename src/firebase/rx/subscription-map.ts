@@ -28,12 +28,14 @@ export class SubscriptionMap {
     }
 
     add(subscription: Subscription) {
-        let list = this.get(SubscriptionMap.DefaultKey)
-        if (list == null) {
-            list = new SubscriptionMap.SubscriptionList()
-            this.map.set(SubscriptionMap.DefaultKey, list)
+        if (subscription == null) {
+            let list = this.get(SubscriptionMap.DefaultKey)
+            if (list == null) {
+                list = new SubscriptionMap.SubscriptionList()
+                this.map.set(SubscriptionMap.DefaultKey, list)
+            }
+            this.get(SubscriptionMap.DefaultKey).add(subscription)
         }
-        this.get(SubscriptionMap.DefaultKey).add(subscription)
     }
 
     unsubscribeAll() {

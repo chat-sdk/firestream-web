@@ -140,7 +140,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param messagesPath
      * @return completion
      */
-    protected deleteSendableAtPath(messagesPath: Path): Promise<void> {
+    protected deleteSendable(messagesPath: Path): Promise<void> {
         return FirebaseService.core.deleteSendable(messagesPath)
     }
 

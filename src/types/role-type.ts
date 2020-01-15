@@ -1,6 +1,7 @@
 import { Keys } from '../firebase/service/keys'
 import { IJsonObject } from '../interfaces/json'
 import { BaseType } from './base-type'
+import { ArrayUtils } from '../utils/array-utils'
 
 export class RoleType extends BaseType {
 
@@ -82,6 +83,64 @@ export class RoleType extends BaseType {
             return 4;
         }
         return 5;
+    }
+
+    toString(): string {
+        if (this.equals(RoleType.owner())) {
+            return 'owner'
+        }
+        if (this.equals(RoleType.admin())) {
+            return 'admin'
+        }
+        if (this.equals(RoleType.member())) {
+            return 'member'
+        }
+        if (this.equals(RoleType.watcher())) {
+            return 'watcher'
+        }
+        if (this.equals(RoleType.banned())) {
+            return 'banned'
+        }
+        return ''
+    }
+
+    static allStringValues(): string[] {
+        return this.allStringValuesExcluding()
+    }
+
+    static allStringValuesExcluding(...excluding: RoleType[]): string[] {
+        const strings = new Array<string>()
+        for (const roleType of this.allExcluding(...excluding)) {
+            strings.push(roleType.toString())
+        }
+        return strings
+    }
+
+    static all(): RoleType[] {
+        return this.allExcluding()
+    }
+
+    static allExcluding(... excluding: RoleType[]): RoleType[] {
+        const roleTypes = [
+            RoleType.owner(),
+            RoleType.admin(),
+            RoleType.member(),
+            RoleType.watcher(),
+            RoleType.banned(),
+        ]
+        return ArrayUtils.remove(roleTypes, ...excluding)
+    }
+
+    static reverseMap(): { [key: string]: RoleType } {
+        const map: { [key: string]: RoleType } = {}
+        for (const roleType of this.all()) {
+            map[roleType.toString()] = roleType
+        }
+        return map
+    }
+
+    equals(roleType: RoleType): boolean {
+        return this.get() === roleType.get()
     }
 
 }

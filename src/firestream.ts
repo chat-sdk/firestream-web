@@ -379,24 +379,3 @@ export class FireStream extends AbstractChat implements IFireStream {
     }
 
 }
-
-// Namespace
-
-/**
- * Just a convenience method to make invocations of FireStream more compact
- * Fire.Stream.sendMessage()
- * instead of
- * FireStream.shared().sendMessage()
- */
-export namespace Fire {
-    export const Stream: IFireStream = FireStream.shared
-    export const api = (): IFireStream => FireStream.shared
-}
-
-/**
- * Even more convenient! Just F.S.sendMessage()!
- */
-export namespace F {
-    export const S: IFireStream = FireStream.shared
-    export const ire: IFireStream = FireStream.shared
-}

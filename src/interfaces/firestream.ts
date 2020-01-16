@@ -35,9 +35,9 @@ export interface IFireStream extends IAbstractChat {
      * a 'received' status will be returned as soon as a errorMessage isType delivered
      * and then you can then manually send a 'read' status when the user
      * actually reads the errorMessage
-     * @param userId - the recipient user id
-     * @param type - the status getTypingStateType
-     * @return - subscribe to get a completion, error update from the method
+     * @param userId the recipient user id
+     * @param type the status getTypingStateType
+     * @return promise
      */
     sendDeliveryReceipt(userId: string, type: DeliveryReceiptType, messageId: String, newId?: Consumer<String> ): Promise<void>
 
@@ -56,9 +56,9 @@ export interface IFireStream extends IAbstractChat {
     /**
      * Send a typing indicator update to a user. This should be sent when the user
      * starts or stops typing
-     * @param userId - the recipient user id
-     * @param type - the status getTypingStateType
-     * @return - subscribe to get a completion, error update from the method
+     * @param userId the recipient user id
+     * @param type the status getTypingStateType
+     * @return promise
      */
     sendTypingIndicator(userId: string, type: TypingStateType, newId?: Consumer<String>): Promise<void>
 

@@ -9,7 +9,7 @@ export interface IAbstractChat {
 
     /**
      * Connect to the chat
-     * @throws Exception error if we are not connected
+     * @throws error if we are not connected
      */
     connect(): void
 
@@ -51,7 +51,7 @@ export interface IAbstractChat {
     /**
      * Get a sendable for a particular ID
      * @param id of sendable
-     * @return sendable or null
+     * @return sendable or undefined
      */
     getSendable(id: string): ISendable | undefined
 
@@ -66,7 +66,7 @@ export interface IAbstractChat {
      *
      * @param fromDate load messages AFTER this date
      * @param toDate load message TO AND INCLUDING this date
-     * @return a stream of messages
+     * @return a promise of messages
      */
     loadMoreMessages(fromDate: Date, toDate: Date): Promise<ISendable[]>
 
@@ -75,7 +75,7 @@ export interface IAbstractChat {
      *
      * @param fromDate load messages AFTER this date
      * @param limit the number of messages returned
-     * @return a stream of messages
+     * @return a promise of messages
      */
     loadMoreMessagesFrom(fromDate: Date, limit: number): Promise<ISendable[]>
 
@@ -84,7 +84,7 @@ export interface IAbstractChat {
      *
      * @param toDate load message TO AND INCLUDING this date
      * @param limit the number of messages returned
-     * @return a stream of messages
+     * @return a promise of messages
      */
     loadMoreMessagesTo(toDate: Date, limit: number): Promise<ISendable[]>
 

@@ -27,39 +27,39 @@ export interface IChat extends IAbstractChat {
     /**
      * Remove the user from the chat's roster. It may be preferable to call
      * @see IFireStream#leaveChat(IChat)
-     * @return completion
+     * @return promise
      */
     leave(): Promise<void>
 
     /**
      * Get the chat name
-     * @return name
+     * @return name string
      */
     getName(): string
 
     /**
      * Set the chat name
      * @param name new name
-     * @return completion
+     * @return promise
      */
     setName(name: string): Promise<void>
 
     /**
      * Get the group image url
-     * @return image url
+     * @return image url string
      */
     getImageURL(): string
 
     /**
      * Set the chat image url
      * @param url of group image
-     * @return completion
+     * @return promise
      */
     setImageURL(url: string): Promise<void>
 
     /**
      * Get any custom data associated with the chat
-     * @return custom data
+     * @return custom data object
      */
     getCustomData(): IJsonObject
 
@@ -67,7 +67,7 @@ export interface IChat extends IAbstractChat {
      * Associate custom data with the chat - you can add your own
      * data to a chat - topic, extra links etc...
      * @param data custom data to write
-     * @return completion
+     * @return promise
      */
     setCustomData(data: IJsonObject): Promise<void>
 
@@ -87,46 +87,52 @@ export interface IChat extends IAbstractChat {
 
 
     /**
-     * Add users to a chat
+     * Add users to the chat
      * @param sendInvite should an invitation message be sent?
      * @param users users to add, set the role of each user using user.setRoleType()
-     * @return completion
+     * @return promise
      */
     addUsers(sendInvite: boolean, users: User[]): Promise<void>
 
     /**
-     * @see IChat#addUsers(Boolean, User[])
+     * Add a user to the chat
+     * @param sendInvite should an invitation message be sent?
+     * @param users user to add, set the role using user.setRoleType()
+     * @return promise
      */
     addUser(sendInvite: boolean, user: User): Promise<void>
 
     /**
-     * Update users in chat
+     * Update users in the chat
      * @param users users to update
-     * @return completion
+     * @return promise
      */
     updateUsers(users: User[]): Promise<void>
 
-    /**
-     * @see IChat#updateUsers(User[])
+    /** Update a user in the chat
+     * @param user user to update
+     * @return promise
      */
     updateUser(user: User): Promise<void>
 
     /**
      * Remove users from a chat
      * @param users users to remove
-     * @return completion
+     * @return promise
      */
     removeUsers(users: User[]): Promise<void>
 
     /**
-     * @see IChat#removeUsers(User[])
+     * Remove a user from the chat
+     * @param user user to remove
+     * @return promise
      */
     removeUser(user: User): Promise<void>
 
     /**
      * Send an invite message to users
      * @param users to invite
-     * @return completion
+     * @return promise
      */
     inviteUsers(users: User[]): Promise<void>
 
@@ -134,7 +140,7 @@ export interface IChat extends IAbstractChat {
      * Set the role of a user
      * @param user to update
      * @param roleType new role type
-     * @return completion
+     * @return promise
      */
     setRole(user: User, roleType: RoleType): Promise<void>
 
@@ -147,56 +153,56 @@ export interface IChat extends IAbstractChat {
 
     /**
      * Get the role for a user
-     * @param theUser to who's role to find
-     * @return role
+     * @param user to who's role to find
+     * @return role of user in the chat
      */
-    getRoleType(theUser: User): RoleType
+    getRoleType(user: User): RoleType
 
     /**
      * Get a list of roles that this user could be changed to. This will vary
      * depending on our own role level
      * @param user to test
-     * @return list of roles
+     * @return list of role types
      */
     getAvailableRoles(user: User): RoleType[]
 
     /**
-     * Get an observable which is called when the name changes
+     * Get an observable which emits new values when ever the name changes
      * @return observable
      */
     getNameChangeEvents(): Observable<string>
 
     /**
-     * Get an observable which is called when the chat image changes
+     * Get an observable which emits new values when ever the chat image changes
      * @return observable
      */
     getImageURLChangeEvents(): Observable<string>
 
     /**
-     * Get an observable which is called when the custom data associated with the
+     * Get an observable which emits new values when ever the custom data associated with the
      * chat is updated
      * @return observable
      */
     getCustomDataChangedEvents(): Observable<IJsonObject>
 
     /**
-     * Get an observable which is called when the a user is added, removed or updated
+     * Get an observable which emits new values when ever a user is added, removed or updated
      * @return observable
      */
     getUserEvents(): MultiQueueSubject<UserEvent>
 
     /**
-     * Send a custom message
+     * Send a message with custom data
      * @param body custom message data
      * @param newId message's new ID before sending
-     * @return completion
+     * @return promise
      */
     sendMessageWithBody(body: IJsonObject, newId?: Consumer<String>): Promise<void>
 
     /**
-     * Send a custom message
+     * Send a message with custom data
      * @param body custom message data
-     * @return completion
+     * @return promise
      */
     sendMessageWithBody(body: IJsonObject): Promise<void>
 
@@ -204,14 +210,14 @@ export interface IChat extends IAbstractChat {
      * Send a text message
      * @param text message text
      * @param newId message's new ID before sending
-     * @return completion
+     * @return promise
      */
     sendMessageWithText(text: string, newId?: Consumer<String>): Promise<void>
 
     /**
      * Send a text message
      * @param text message text
-     * @return completion
+     * @return promise
      */
     sendMessageWithText(text: string): Promise<void>
 
@@ -219,14 +225,14 @@ export interface IChat extends IAbstractChat {
      * Send a typing indicator message
      * @param type typing state
      * @param newId message's new ID before sending
-     * @return completion
+     * @return promise
      */
     sendTypingIndicator(type: TypingStateType, newId?: Consumer<String>): Promise<void>
 
     /**
      * Send a typing indicator message. An indicator should be sent when starting and stopping typing
      * @param type typing state
-     * @return completion
+     * @return promise
      */
     sendTypingIndicator(type: TypingStateType): Promise<void>
 
@@ -237,7 +243,7 @@ export interface IChat extends IAbstractChat {
      * actually reads the message
      * @param type receipt type
      * @param newId message's new ID before sending
-     * @return completion
+     * @return promise
      */
     sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string, newId?: Consumer<String>): Promise<void>
 
@@ -247,7 +253,7 @@ export interface IChat extends IAbstractChat {
      * and then you can then manually send a 'read' status when the user
      * actually reads the message
      * @param type receipt type
-     * @return completion
+     * @return promise
      */
     sendDeliveryReceipt(type: DeliveryReceiptType, messageId: string): Promise<void>
 
@@ -255,35 +261,35 @@ export interface IChat extends IAbstractChat {
      * Send a custom sendable
      * @param sendable to send
      * @param newId message's new ID before sending
-     * @return completion
+     * @return promise
      */
     send(sendable: ISendable, newId?: Consumer<String>): Promise<void>
 
     /**
      * Send a custom sendable
      * @param sendable to send
-     * @return completion
+     * @return promise
      */
     send(sendable: ISendable): Promise<void>
 
     /**
      * Delete a sendable
      * @param sendable to delete
-     * @return completion
+     * @return promise
      */
     deleteSendable(sendable: ISendable): Promise<void>
 
     /**
      * Mark a message as received
      * @param message to mark as received
-     * @return completion
+     * @return promise
      */
     markReceived(message: Message): Promise<void>
 
     /**
      * Mark a message as read
      * @param message to mark as read
-     * @return completion
+     * @return promise
      */
     markRead(message: Message): Promise<void>
 

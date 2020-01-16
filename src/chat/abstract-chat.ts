@@ -234,6 +234,8 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     protected passMessageResultToStream(event: SendableEvent) {
         const sendable = event.getSendable()
 
+        FireStreamStore.debug(`Sendable: ${sendable.getType()} ${sendable.getId()}, date: ${sendable.getDate().getTime()}`)
+
         // In general, we are mostly interested when messages are added
         if (event.typeIs(EventType.Added)) {
             if (sendable.isType(SendableType.message())) {

@@ -58,4 +58,10 @@ export class FireStreamStore {
         return new Date()
     }
 
+    static debug(text: string) {
+        if (this.config.debugEnabled) {
+            console.log(text)
+        }
+    }
+
 }

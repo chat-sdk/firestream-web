@@ -10,7 +10,8 @@ export class Ref {
         if (ref instanceof firestore.CollectionReference) {
             return ref
         } else {
-            throw new Error('error_mismatched_col_reference')
+            FireStreamStore.debug('CollectionReference expected but path points to document')
+            throw new Error('CollectionReference expected but path points to document')
         }
     }
 
@@ -19,7 +20,8 @@ export class Ref {
         if (ref instanceof firestore.DocumentReference) {
             return ref
         } else {
-            throw new Error('error_mismatched_col_reference')
+            FireStreamStore.debug('DocumentReference expected but path points to collection')
+            throw new Error('DocumentReference expected but path points to collection')
         }
     }
 

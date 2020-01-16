@@ -56,7 +56,7 @@ export class Chat extends AbstractChat implements IChat {
 
     async connect(): Promise<void> {
 
-        console.log('Connect to chat:', this.id)        
+        FireStreamStore.debug('Connect to chat: ' + this.id)
 
         // If delivery receipts are enabled, send the delivery receipt
         if (FireStreamStore.config.deliveryReceiptsEnabled) {
@@ -97,10 +97,9 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async leave(): Promise<void> {
-        // return this.removeUser(User.currentUser()).then(this.disconnect)
         if (this.getMyRoleType().equals(RoleType.owner()) && this.getUsers().length > 1) {
             if (this.getUsers().length > 1) {
-                throw new Error('error_group_must_be_empty_to_close')
+                throw new Error('Remove the other users before you can delete the group')
             } else {
                 // TODO: This code block will never be reached
                 return this.delete().then(this.disconnect)

@@ -143,14 +143,22 @@ export interface IChat extends IAbstractChat {
      * @param roleType to find
      * @return list of users
      */
-    getUsersForRoleType(roleType: RoleType): User[];
+    getUsersForRoleType(roleType: RoleType): User[]
 
     /**
      * Get the role for a user
      * @param theUser to who's role to find
      * @return role
      */
-    getRoleTypeForUser(theUser: User): RoleType;
+    getRoleType(theUser: User): RoleType
+
+    /**
+     * Get a list of roles that this user could be changed to. This will vary
+     * depending on our own role level
+     * @param user to test
+     * @return list of roles
+     */
+    getAvailableRoles(user: User): RoleType[]
 
     /**
      * Get an observable which is called when the name changes

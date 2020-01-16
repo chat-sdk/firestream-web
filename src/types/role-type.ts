@@ -109,11 +109,7 @@ export class RoleType extends BaseType {
     }
 
     static allStringValuesExcluding(...excluding: RoleType[]): string[] {
-        const strings = new Array<string>()
-        for (const roleType of this.allExcluding(...excluding)) {
-            strings.push(roleType.toString())
-        }
-        return strings
+        return this.rolesToStringValues(this.allExcluding(...excluding))
     }
 
     static all(): RoleType[] {
@@ -129,6 +125,10 @@ export class RoleType extends BaseType {
             RoleType.banned(),
         ]
         return ArrayUtils.remove(roleTypes, ...excluding)
+    }
+
+    static rolesToStringValues(roleTypes: RoleType[]): string[] {
+        return roleTypes.map(rt => rt.toString())
     }
 
     static reverseMap(): { [key: string]: RoleType } {

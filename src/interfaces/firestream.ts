@@ -26,14 +26,7 @@ export interface IFireStream extends IAbstractChat {
     /**
      * @return authenticated user
      */
-    currentUser(): User
-
-    /**
-     * Get the Firebase service that will handle read and write operations
-     * this could either be Firestore or the Realtime database
-     * @return firebase service
-     */
-    getFirebaseService(): FirebaseService
+    currentUser(): User | undefined
 
     // Messages
 

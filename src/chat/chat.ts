@@ -9,6 +9,7 @@ import { FirebaseService } from '../firebase/service/firebase-service'
 import { Keys } from '../firebase/service/keys'
 import { Path } from '../firebase/service/path'
 import { Paths } from '../firebase/service/paths'
+import { FireStreamStore } from '../firestream-store'
 import { IChat } from '../interfaces/chat'
 import { Consumer } from '../interfaces/consumer'
 import { IJsonObject } from '../interfaces/json'
@@ -28,7 +29,6 @@ import { AbstractChat } from './abstract-chat'
 import { Meta } from './meta'
 import { Send } from './send'
 import { DataProvider, User } from './user'
-import { FireStreamStore } from '../firestream-store'
 
 export class Chat extends AbstractChat implements IChat {
 
@@ -80,7 +80,7 @@ export class Chat extends AbstractChat implements IChat {
         }, this.error))
 
         // Handle name and image change
-        this.sm.add(FirebaseService.chat.metaOn(Paths.chatMetaPath(this.id)).subscribe(newMeta => {
+        this.sm.add(FirebaseService.chat.metaOn(this.getId()).subscribe(newMeta => {
             if (!newMeta) return
             if (newMeta.getName() && newMeta.getName() != this.meta.getName()) {
                 this.meta.setName(newMeta.getName())
@@ -96,8 +96,21 @@ export class Chat extends AbstractChat implements IChat {
         await super.connect()
     }
 
-    leave(): Promise<void> {
+    async leave(): Promise<void> {
+        // return this.removeUser(User.currentUser()).then(this.disconnect)
+        if (this.getMyRoleType().equals(RoleType.owner()) && this.getUsers().length > 1) {
+            if (this.getUsers().length > 1) {
+                throw new Error('error_group_must_be_empty_to_close')
+            } else {
+                // TODO: This code block will never be reached
+                return this.delete().then(this.disconnect)
+            }
+        }
         return this.removeUser(User.currentUser()).then(this.disconnect)
+    }
+
+    protected delete(): Promise<void> {
+        return FirebaseService.chat.delete(this.getId())
     }
 
     getName(): string {
@@ -108,7 +121,7 @@ export class Chat extends AbstractChat implements IChat {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getName() !== name) {
-            await FirebaseService.chat.setMetaField(this.metaPath(), Keys.Name, name)
+            await FirebaseService.chat.setMetaField(this.getId(), Keys.Name, name)
             this.meta.setName(name)
         }
     }
@@ -121,7 +134,7 @@ export class Chat extends AbstractChat implements IChat {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getImageURL() !== url) {
-            await FirebaseService.chat.setMetaField(this.metaPath(), Keys.ImageURL, url)
+            await FirebaseService.chat.setMetaField(this.getId(), Keys.ImageURL, url)
             this.meta.setImageURL(name)
         }
     }
@@ -134,7 +147,7 @@ export class Chat extends AbstractChat implements IChat {
         if (!this.testPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else {
-            await FirebaseService.chat.setMetaField(this.metaPath(), Paths.Data, data)
+            await FirebaseService.chat.setMetaField(this.getId(), Paths.Data, data)
             this.meta.setData(data)
         }
     }
@@ -230,13 +243,29 @@ export class Chat extends AbstractChat implements IChat {
         return this.updateUser(user)
     }
 
-    getRoleTypeForUser(theUser: User): RoleType {
+    getRoleType(theUser: User): RoleType {
         for (const user of this.users) {
             if (user.equals(theUser) && user.roleType) {
                 return user.roleType
             }
         }
         return RoleType.none()
+    }
+
+    getAvailableRoles(user: User): RoleType[] {
+        // We can't set our own role and only admins and higher can set a role
+        if (!user.isMe() && this.testPermission(RoleType.admin())) {
+            // The owner can set users to any role apart from owner
+            if (this.testPermission(RoleType.owner())) {
+                return RoleType.allExcluding(RoleType.owner());
+            }
+            // Admins can set the role type of non-admin users. They can't create or
+            // destroy admins, only the owner can do that
+            if (!user.roleType?.equals(RoleType.admin())) {
+                return RoleType.allExcluding(RoleType.owner(), RoleType.admin());
+            }
+        }
+        return []
     }
 
     getNameChangeEvents(): Observable<string> {
@@ -287,7 +316,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     protected getMyRoleType(): RoleType {
-        return this.getRoleTypeForUser(User.currentUser())
+        return this.getRoleType(User.currentUser())
     }
 
     equals(chat: any): boolean {
@@ -327,7 +356,7 @@ export class Chat extends AbstractChat implements IChat {
 
     static async create(name: string, imageURL: string, data?: IJsonObject, users?: User[]): Promise<Chat> {
         const meta = Meta.from(name, imageURL, data).addTimestamp().wrap().toData(true)
-        const chatId = await FirebaseService.chat.add(Paths.chatsPath(), meta)
+        const chatId = await FirebaseService.chat.add(meta)
         const chat = new Chat(chatId, undefined, new Meta(name, imageURL, data))
 
         // Make sure the current user is the owner
@@ -339,7 +368,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     protected testPermission(roleType: RoleType): boolean {
-        return roleType.test(this.getRoleTypeForUser(User.currentUser()))
+        return roleType.test(this.getRoleType(User.currentUser()))
     }
 
     public deleteSendable(arg: Path | ISendable): Promise<void> {

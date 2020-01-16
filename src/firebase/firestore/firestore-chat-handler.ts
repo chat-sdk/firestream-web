@@ -22,13 +22,14 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         return new RxFirestore().set(Ref.document(Paths.userGroupChatPath(chatId)), User.dateDataProvider().data())
     }
 
-    setMetaField(chatMetaPath: Path, key: string, value: TJsonValue): Promise<void> {
+    setMetaField(chatId: string, key: string, value: TJsonValue): Promise<void> {
+        const chatMetaPath = Paths.chatMetaPath(chatId)
         chatMetaPath.normalizeForDocument()
         return new RxFirestore().update(Ref.document(chatMetaPath), { [key]: value })
     }
 
-    metaOn(path: Path): Observable<Meta> {
-        return new RxFirestore().on(Ref.document(path)).pipe(map(snapshot => {
+    metaOn(chatId: string): Observable<Meta> {
+        return new RxFirestore().on(Ref.document(Paths.chatPath(chatId))).pipe(map(snapshot => {
             const meta = new Meta()
 
             const base = Keys.Meta + '.'
@@ -42,8 +43,12 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
         }))
     }
 
-    async add(path: Path, data: IJsonObject, newId?: Consumer<string>): Promise<string> {
-        return new RxFirestore().add(Ref.collection(path), data, newId)
+    async add(data: IJsonObject, newId?: Consumer<string>): Promise<string> {
+        return new RxFirestore().add(Ref.collection(Paths.chatsPath()), data, newId)
+    }
+
+    delete(chatId: string): Promise<void> {
+        return new RxFirestore().delete(Ref.document(Paths.chatPath(chatId)))
     }
 
 }

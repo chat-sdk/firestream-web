@@ -17,13 +17,15 @@ export abstract class FirebaseChatHandler {
      *  - chat/meta/...
      * But in Firestore meta/... is stored as a field on the chat document
      * So we need to link to the chat document in both cases
-     * @param chatPath path to chat document / entity
+     * @param chatId chat room id
      * @return stream of data when chat meta changes
      */
-    abstract metaOn(path: Path): Observable<Meta>
+    abstract metaOn(chatId: string): Observable<Meta>
 
-    abstract setMetaField(chatMetaPath: Path, key: string, value: TJsonValue): Promise<void>
+    abstract setMetaField(chatId: string, key: string, value: TJsonValue): Promise<void>
 
-    abstract add(path: Path, data: IJsonObject, newId?: Consumer<string>): Promise<string>
+    abstract add(data: IJsonObject, newId?: Consumer<string>): Promise<string>
+
+    abstract delete(chatId: string): Promise<void>
 
 }

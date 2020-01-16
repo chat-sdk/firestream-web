@@ -1,4 +1,4 @@
-import { app, User } from 'firebase/app'
+import { app, database, firestore, User } from 'firebase/app'
 
 import { Config } from './config'
 
@@ -55,6 +55,12 @@ export class FireStreamStore {
      * @return appropriate server timestamp object
      */
     static timestamp(): any {
+        if (this.config.database === Config.DatabaseType.Firestore) {
+            return firestore.FieldValue.serverTimestamp()
+        }
+        if (this.config.database === Config.DatabaseType.Realtime) {
+            return database.ServerValue.TIMESTAMP
+        }
         return new Date()
     }
 

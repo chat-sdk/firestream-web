@@ -1,7 +1,7 @@
-import { FirebaseService } from '../firebase/service/firebase-service'
-import { SendableType } from '../types/sendable-types'
-import { ISendable } from '../interfaces/sendable'
 import { SendableEvent } from '../events/sendable-event'
+import { FirebaseService } from '../firebase/service/firebase-service'
+import { ISendable } from '../interfaces/sendable'
+import { SendableType } from '../types/sendable-types'
 
 type Predicate<T> = (value: T) => boolean
 

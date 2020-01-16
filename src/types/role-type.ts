@@ -1,7 +1,7 @@
 import { Keys } from '../firebase/service/keys'
 import { IJsonObject } from '../interfaces/json'
-import { BaseType } from './base-type'
 import { ArrayUtils } from '../utils/array-utils'
+import { BaseType } from './base-type'
 
 export class RoleType extends BaseType {
 

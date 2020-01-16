@@ -1,13 +1,13 @@
 import { empty, ErrorObserver, Observable, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { Config } from '../config'
 import { EventType } from '../events/event-type'
 import { ListEvent } from '../events/list-event'
 import { SendableEvent } from '../events/sendable-event'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Path } from '../firebase/service/path'
+import { FireStreamStore } from '../firestream-store'
 import { IAbstractChat } from '../interfaces/abstract-chat'
 import { Consumer } from '../interfaces/consumer'
 import { ISendable } from '../interfaces/sendable'
@@ -20,7 +20,6 @@ import { SendableType } from '../types/sendable-types'
 import { ArrayUtils } from '../utils/array-utils'
 import { Events } from './events'
 import { DataProvider, User } from './user'
-import { FireStreamStore } from '../firestream-store'
 
 /**
  * This class handles common elements of a conversation bit it 1-to-1 or group.

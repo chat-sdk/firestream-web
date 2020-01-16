@@ -1,9 +1,9 @@
 import { Chat } from '../chat/chat'
 import { Keys } from '../firebase/service/keys'
+import { IChat } from '../interfaces/chat'
 import { Event } from './event'
 import { EventType } from './event-type'
 import { ListEvent } from './list-event'
-import { IChat } from '../interfaces/chat'
 
 export class ChatEvent extends Event {
 

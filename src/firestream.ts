@@ -34,6 +34,7 @@ import { InvitationType } from './types/invitation-type'
 import { PresenceType } from './types/presence-type'
 import { SendableType } from './types/sendable-types'
 import { TypingStateType } from './types/typing-state-type'
+import { ArrayUtils } from './utils/array-utils'
 
 export class FireStream extends AbstractChat implements IFireStream {
 
@@ -151,7 +152,7 @@ export class FireStream extends AbstractChat implements IFireStream {
                 this.blocked.push(ue.user)
             }
             if (ue.typeIs(EventType.Removed)) {
-                this.blocked = this.blocked.filter(user => !user.equals(ue.user))
+                this.blocked = ArrayUtils.remove(this.blocked, ue.user)
             }
             this.blockedEvents.next(ue)
         }))
@@ -164,7 +165,7 @@ export class FireStream extends AbstractChat implements IFireStream {
                 this.contacts.push(ue.user)
             }
             else if (ue.typeIs(EventType.Removed)) {
-                this.contacts = this.contacts.filter(user => !user.equals(ue.user))
+                this.contacts = ArrayUtils.remove(this.contacts, ue.user)
             }
             this.contactEvents.next(ue)
         }))

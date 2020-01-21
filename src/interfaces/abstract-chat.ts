@@ -88,4 +88,13 @@ export interface IAbstractChat {
      */
     loadMoreMessagesTo(toDate: Date, limit: number): Promise<ISendable[]>
 
+    /**
+     * Load a batch of historic messages
+     *
+     * @param toDate load message TO  this date
+     * @param limit the number of messages returned
+     * @return a stream of messages
+     */
+    loadMoreMessagesBefore(toDate: Date, limit: number): Promise<ISendable[]>
+
 }

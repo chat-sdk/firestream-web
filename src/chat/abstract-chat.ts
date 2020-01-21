@@ -72,7 +72,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
             }
             if (previous != null) {
                 if (event.typeIs(EventType.Modified)) {
-                    sendable.copyTo(previous);
+                    sendable.copyTo(previous)
                 }
                 if (event.typeIs(EventType.Removed)) {
                     this.sendables = ArrayUtils.remove(this.sendables, previous)
@@ -97,12 +97,17 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
         return FirebaseService.core.loadMoreMessages(this.messagesPath(), fromDate, toDate, limit)
     }
 
-    loadMoreMessagesFrom(fromDate: Date, limit: number): Promise<ISendable[]> {
+    loadMoreMessagesFrom(fromDate?: Date, limit?: number): Promise<ISendable[]> {
         return this.loadMoreMessages(fromDate, undefined, limit)
     }
 
-    loadMoreMessagesTo(toDate: Date, limit: number): Promise<ISendable[]> {
+    loadMoreMessagesTo(toDate?: Date, limit?: number): Promise<ISendable[]> {
         return this.loadMoreMessages(undefined, toDate, limit)
+    }
+
+    async loadMoreMessagesBefore(toDate?: Date, limit?: number): Promise<ISendable[]> {
+        const before = toDate && new Date(toDate.getTime() - 1)
+        return this.loadMoreMessagesTo(before, limit)
     }
 
     /**

@@ -23,8 +23,8 @@ export class RxFirestore {
         return new Observable(emitter => {
             this.unsubscribe = ref.onSnapshot(snapshot => {
                 if (snapshot) {
-                    for (const dc of snapshot.docChanges()) {
-                        emitter.next(dc)
+                    for (const docChange of snapshot.docChanges()) {
+                        emitter.next(docChange)
                     }
                 }
             }, emitter.error)

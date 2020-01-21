@@ -1,6 +1,6 @@
-import * as firebase from 'firebase/app'
+import { app, firestore } from 'firebase/app'
 import { Observable } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { DataProvider, User } from '../../chat/user'
 import { EventType } from '../../events/event-type'
@@ -9,6 +9,7 @@ import { SendableEvent } from '../../events/sendable-event'
 import { Consumer } from '../../interfaces/consumer'
 import { ISendable } from '../../interfaces/sendable'
 import { Sendable } from '../../message/sendable'
+import { RxUtils } from '../../utils/rx-utils'
 import { FirebaseCoreHandler } from '../service/firebase-core-handler'
 import { Keys } from '../service/keys'
 import { Path } from '../service/path'
@@ -17,9 +18,9 @@ import { RxFirestore } from './rx-firestore'
 
 export class FirestoreCoreHandler extends FirebaseCoreHandler {
 
-    private firebaseApp: firebase.app.App
+    private firebaseApp: app.App
 
-    constructor(firebaseApp: firebase.app.App) {
+    constructor(firebaseApp: app.App) {
         super()
         this.firebaseApp = firebaseApp
     }
@@ -31,7 +32,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
                 const type = FirestoreCoreHandler.typeForDocumentChange(change)
                 return new ListEvent(ds.id, ds.data({ serverTimestamps: 'estimate' }), type)
             }
-        }), filter(c => !!c)) as Observable<ListEvent>
+        }), RxUtils.filterTruthy)
     }
 
     deleteSendable (messagesPath: Path): Promise<void> {
@@ -79,7 +80,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     async loadMoreMessages(messagesPath: Path, fromDate: Date, toDate: Date, limit?: number): Promise<ISendable[]> {
-        let query = Ref.collection(messagesPath) as firebase.firestore.Query
+        let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
         if (fromDate) {
@@ -114,7 +115,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
-        let query = Ref.collection(messagesPath) as firebase.firestore.Query
+        let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.where(Keys.From, '==', this.firebaseApp.auth().currentUser?.uid)
         query = query.orderBy(Keys.Date, 'desc')
@@ -142,7 +143,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @return a events of errorMessage results
      */
     messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<SendableEvent> {
-        let query = Ref.collection(messagesPath) as firebase.firestore.Query
+        let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
         if (newerThan != null) {
@@ -150,15 +151,13 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         }
         query.limit(limit)
 
-        const $docChanges = new RxFirestore().onQuery(query)
-        const $sendableEvents = $docChanges.pipe(map(docChange => {
+        return new RxFirestore().onQuery(query).pipe(map(docChange => {
             const docSnapshot = docChange.doc
             if (docSnapshot.exists) {
                 const sendable = new Sendable(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' }))
                 return new SendableEvent(sendable, FirestoreCoreHandler.typeForDocumentChange(docChange))
             }
-        }))
-        return $sendableEvents.pipe(filter(s => !!s)) as Observable<SendableEvent>
+        }), RxUtils.filterTruthy)
     }
 
     /**
@@ -170,11 +169,11 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @param batch Firestore batch
      * @return completion
      */
-    protected runBatch(batch: firebase.firestore.WriteBatch): Promise<void> {
+    protected runBatch(batch: firestore.WriteBatch): Promise<void> {
         return batch.commit()
     }
 
-    static typeForDocumentChange(change: firebase.firestore.DocumentChange): EventType {
+    static typeForDocumentChange(change: firestore.DocumentChange): EventType {
         switch (change.type) {
             case 'added':
                 return EventType.Added

@@ -70,12 +70,13 @@ export class Chat extends AbstractChat implements IChat {
 
         this.sm.add(this.listChangeOn(Paths.chatUsersPath(this.id)).subscribe(listEvent => {
             const userEvent = UserEvent.from(listEvent)
-            if (userEvent.typeIs(EventType.Added)) {
-                this.users.push(userEvent.user)
+            const user = userEvent.user
+
+            this.users = ArrayUtils.remove(this.users, user)
+            if (!userEvent.typeIs(EventType.Removed)) {
+                this.users.push(user)
             }
-            if (userEvent.typeIs(EventType.Removed)) {
-                this.users = this.users.filter(user => !user.equals(userEvent.user))
-            }
+
             this.userEvents.next(userEvent)
         }, this.error))
 
@@ -117,7 +118,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async setName(name: string): Promise<void> {
-        if (!this.testPermission(RoleType.admin())) {
+        if (!this.hasPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getName() !== name) {
             await FirebaseService.chat.setMetaField(this.getId(), Keys.Name, name)
@@ -130,7 +131,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async setImageURL(url: string): Promise<void> {
-        if (!this.testPermission(RoleType.admin())) {
+        if (!this.hasPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else if (this.meta.getImageURL() !== url) {
             await FirebaseService.chat.setMetaField(this.getId(), Keys.ImageURL, url)
@@ -143,7 +144,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async setCustomData(data: IJsonObject): Promise<void> {
-        if (!this.testPermission(RoleType.admin())) {
+        if (!this.hasPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         } else {
             await FirebaseService.chat.setMetaField(this.getId(), Paths.Data, data)
@@ -233,9 +234,9 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     setRole(user: User, roleType: RoleType): Promise<void> {
-        if (roleType.equals(RoleType.owner()) && !this.testPermission(RoleType.owner())) {
+        if (roleType.equals(RoleType.owner()) && !this.hasPermission(RoleType.owner())) {
             throw this.ownerPermissionRequired()
-        } else if(!this.testPermission(RoleType.admin())) {
+        } else if(!this.hasPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         }
         user.roleType = roleType
@@ -253,9 +254,9 @@ export class Chat extends AbstractChat implements IChat {
 
     getAvailableRoles(user: User): RoleType[] {
         // We can't set our own role and only admins and higher can set a role
-        if (!user.isMe() && this.testPermission(RoleType.admin())) {
+        if (!user.isMe() && this.hasPermission(RoleType.admin())) {
             // The owner can set users to any role apart from owner
-            if (this.testPermission(RoleType.owner())) {
+            if (this.hasPermission(RoleType.owner())) {
                 return RoleType.allExcluding(RoleType.owner());
             }
             // Admins can set the role type of non-admin users. They can't create or
@@ -300,7 +301,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async send(sendable: ISendable, newId?: Consumer<string>): Promise<void> {
-        if (!this.testPermission(RoleType.member())) {
+        if (!this.hasPermission(RoleType.member())) {
             throw this.memberPermissionRequired()
         }
         return Send.toPath(Paths.chatMessagesPath(this.id), sendable, newId)
@@ -314,7 +315,7 @@ export class Chat extends AbstractChat implements IChat {
         return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.getId())
     }
 
-    protected getMyRoleType(): RoleType {
+    public getMyRoleType(): RoleType {
         return this.getRoleType(User.currentUser())
     }
 
@@ -366,7 +367,7 @@ export class Chat extends AbstractChat implements IChat {
         return chat
     }
 
-    protected testPermission(roleType: RoleType): boolean {
+    public hasPermission(roleType: RoleType): boolean {
         return roleType.test(this.getRoleType(User.currentUser()))
     }
 

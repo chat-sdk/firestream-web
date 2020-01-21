@@ -139,8 +139,8 @@ export class RoleType extends BaseType {
         return map
     }
 
-    equals(roleType: RoleType): boolean {
-        return this.get() === roleType.get()
+    equals(roleType?: RoleType): boolean {
+        return this.get() === roleType?.get()
     }
 
 }

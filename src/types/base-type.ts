@@ -14,12 +14,16 @@ export class BaseType {
         return this.type
     }
 
-    equals(type: BaseType): boolean {
-        return this.get() === type.get()
+    equals(type?: BaseType): boolean {
+        return this.get() === type?.get()
     }
 
     static none(): BaseType {
         return new BaseType('')
+    }
+
+    is(type?: BaseType): boolean {
+        return this.equals(type)
     }
 
 }

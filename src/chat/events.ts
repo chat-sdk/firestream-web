@@ -1,7 +1,8 @@
 import { Observable, Subject } from 'rxjs'
 
-import { SendableEvent } from '../events/sendable-event'
+import { Event } from '../events'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
+import { ISendable } from '../interfaces'
 import { DeliveryReceipt } from '../message/delivery-receipt'
 import { Invitation } from '../message/invitation'
 import { Message } from '../message/message'
@@ -11,21 +12,21 @@ import { FireStreamMessage } from '../namespace/firestream-message'
 
 export class Events {
 
-    protected messages = new MultiQueueSubject<Message>()
-    protected deliveryReceipts = new MultiQueueSubject<DeliveryReceipt>()
-    protected typingStates = new MultiQueueSubject<TypingState>()
-    protected presences = new MultiQueueSubject<Presence>()
-    protected invitations = new MultiQueueSubject<Invitation>()
+    protected messages = new MultiQueueSubject<Event<Message>>()
+    protected deliveryReceipts = new MultiQueueSubject<Event<DeliveryReceipt>>()
+    protected typingStates = new MultiQueueSubject<Event<TypingState>>()
+    protected presences = new MultiQueueSubject<Event<Presence>>()
+    protected invitations = new MultiQueueSubject<Event<Invitation>>()
 
     /**
      * The sendable event stream provides the most information. It passes a sendable event
      * when will include the kind of action that has been performed.
      */
-    protected sendables = new MultiQueueSubject<SendableEvent>()
+    protected sendables = new MultiQueueSubject<Event<ISendable>>()
 
     protected errors = new Subject<Error>()
 
-    getMessages(): MultiQueueSubject<Message> {
+    getMessages(): MultiQueueSubject<Event<Message>> {
         return this.messages
     }
 
@@ -36,8 +37,8 @@ export class Events {
      * to avoid a naming clash
      * @return events of messages
      */
-    getFireStreamMessages(): MultiQueueSubject<FireStreamMessage> {
-        return this.messages.map(FireStreamMessage.fromSendable)
+    getFireStreamMessages(): MultiQueueSubject<Event<FireStreamMessage>> {
+        return this.messages.map(messageEvent => messageEvent.to(FireStreamMessage.fromSendable(messageEvent.get())))
     }
 
     /**
@@ -48,22 +49,22 @@ export class Events {
         return this.errors.asObservable()
     }
 
-    getDeliveryReceipts(): MultiQueueSubject<DeliveryReceipt> {
+    getDeliveryReceipts(): MultiQueueSubject<Event<DeliveryReceipt>> {
         return this.deliveryReceipts
     }
 
-    getTypingStates(): MultiQueueSubject<TypingState> {
+    getTypingStates(): MultiQueueSubject<Event<TypingState>> {
         return this.typingStates
     }
 
-    getSendables(): MultiQueueSubject<SendableEvent> {
+    getSendables(): MultiQueueSubject<Event<ISendable>> {
         return this.sendables
     }
 
-    getPresences(): MultiQueueSubject<Presence> {
+    getPresences(): MultiQueueSubject<Event<Presence>> {
         return this.presences
     }
-    getInvitations(): MultiQueueSubject<Invitation> {
+    getInvitations(): MultiQueueSubject<Event<Invitation>> {
         return this.invitations
     }
 

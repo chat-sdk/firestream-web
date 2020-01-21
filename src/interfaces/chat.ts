@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 
 import { User } from '../chat/user'
-import { UserEvent } from '../events/user-event'
+import { Event } from '../events'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { Message } from '../message/message'
 import { FireStreamUser } from '../namespace/firestream-user'
@@ -202,7 +202,7 @@ export interface IChat extends IAbstractChat {
      * Get an observable which emits new values when ever a user is added, removed or updated
      * @return observable
      */
-    getUserEvents(): MultiQueueSubject<UserEvent>
+    getUserEvents(): MultiQueueSubject<Event<User>>
 
     /**
      * Send a message with custom data
@@ -294,16 +294,16 @@ export interface IChat extends IAbstractChat {
 
     /**
      * Mark a message as received
-     * @param message to mark as received
+     * @param sendable to mark as received
      * @return promise
      */
-    markReceived(message: Message): Promise<void>
+    markReceived(sendable: ISendable): Promise<void>
 
     /**
      * Mark a message as read
-     * @param message to mark as read
+     * @param sendable to mark as read
      * @return promise
      */
-    markRead(message: Message): Promise<void>
+    markRead(sendable: ISendable): Promise<void>
 
 }

@@ -1,4 +1,4 @@
-import { SendableEvent } from '../events/sendable-event'
+import { Event, EventType } from '../events'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { ISendable } from '../interfaces/sendable'
 import { SendableType } from '../types/sendable-types'
@@ -7,10 +7,10 @@ type Predicate<T> = (value: T) => boolean
 
 export class MessageStreamFilter {
 
-    static bySendableType(...types: SendableType[]): Predicate<ISendable> {
-        return (sendable: ISendable) => {
+    static bySendableType(...types: SendableType[]): Predicate<Event<ISendable>> {
+        return (event: Event<ISendable>) => {
             for (const type of types) {
-                if (sendable.getType() === type.get()) {
+                if (event.get().getType() === type.get()) {
                     return true
                 }
             }
@@ -18,14 +18,25 @@ export class MessageStreamFilter {
         }
     }
 
-    static notFromMe<T extends ISendable>(): Predicate<T> {
-        return (sendable: T) => sendable.getFrom() !== FirebaseService.userId
+    static notFromMe<T extends ISendable>(): Predicate<Event<T>> {
+        return (event: Event<T>) => event.get().getFrom() !== FirebaseService.userId
     }
 
-    static eventBySendableType(...types: SendableType[]): Predicate<SendableEvent> {
-        return (sendableEvent: SendableEvent) => {
+    static byEventType(...types: EventType[]): Predicate<Event<ISendable>> {
+        return (event: Event<ISendable>) => {
             for (const type of types) {
-                if (sendableEvent.getSendable().getType() === type.get()) {
+                if (event.getType() === type) {
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    static eventBySendableType(...types: SendableType[]): Predicate<Event<ISendable>> {
+        return (event: Event<ISendable>) => {
+            for (const type of types) {
+                if (event.get().getType() === type.get()) {
                     return true
                 }
             }

@@ -5,10 +5,9 @@ import { AbstractChat } from './chat/abstract-chat'
 import { Chat } from './chat/chat'
 import { User } from './chat/user'
 import { Config } from './config'
-import { ChatEvent } from './events/chat-event'
+import { Event } from './events'
 import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
-import { UserEvent } from './events/user-event'
 import { MessageStreamFilter } from './filter/message-stream-filter'
 import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
 import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
@@ -43,9 +42,9 @@ export class FireStream extends AbstractChat implements IFireStream {
     protected contacts = new Array<User>()
     protected blocked = new Array<User>()
 
-    protected chatEvents = new MultiQueueSubject<ChatEvent>()
-    protected contactEvents = new MultiQueueSubject<UserEvent>()
-    protected blockedEvents = new MultiQueueSubject<UserEvent>()
+    protected chatEvents = new MultiQueueSubject<Event<IChat>>()
+    protected contactEvents = new MultiQueueSubject<Event<User>>()
+    protected blockedEvents = new MultiQueueSubject<Event<User>>()
 
     protected connectionEvents = new BehaviorSubject<ConnectionEvent>(((null as unknown) as ConnectionEvent))
 
@@ -114,21 +113,21 @@ export class FireStream extends AbstractChat implements IFireStream {
             )
         }
         // If deletion is enabled, we don't filter so we delete all the message types
-        const $sendables = $streamEvents.pipe(map(event => event.getSendable()))
+        const $sendables = $streamEvents.pipe(map(event => event.get()))
         this.sm.add($sendables.pipe(flatMap(this.deleteSendable)).subscribe())
 
         // DELIVERY RECEIPTS
 
-        this.sm.add(this.getSendableEvents().getMessages().allEvents().subscribe(async message => {
+        this.sm.add(this.getSendableEvents().getMessages().allEvents().subscribe(async event => {
             try {
                 // If delivery receipts are enabled, send the delivery receipt
                 if (FireStreamStore.config.deliveryReceiptsEnabled) {
-                    await this.markReceived(message)
+                    await this.markReceived(event.get())
                 }
                 // If message deletion is disabled, instead mark the message as received. This means
                 // that when we add a listener, we only get new messages
                 if (!FireStreamStore.config.deleteMessagesOnReceipt) {
-                    await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), message.getId())
+                    await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), event.get().getId())
                 }
             } catch (err) {
                 this.error(err)
@@ -137,9 +136,9 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         // INVITATIONS
 
-        this.sm.add(this.getSendableEvents().getInvitations().allEvents().pipe(flatMap(invitation => {
+        this.sm.add(this.getSendableEvents().getInvitations().allEvents().pipe(flatMap(event => {
             if (FireStreamStore.config.autoAcceptChatInvite) {
-                return invitation.accept()
+                return event.get().accept()
             }
             return Promise.resolve()
         })).subscribe(this))
@@ -147,12 +146,12 @@ export class FireStream extends AbstractChat implements IFireStream {
         // BLOCKED USERS
 
         this.sm.add(this.listChangeOn(Paths.blockedPath()).subscribe(listEvent => {
-            const ue = UserEvent.from(listEvent)
+            const ue = listEvent.to(User.from(listEvent))
             if (ue.typeIs(EventType.Added)) {
-                this.blocked.push(ue.user)
+                this.blocked.push(ue.get())
             }
             if (ue.typeIs(EventType.Removed)) {
-                this.blocked = ArrayUtils.remove(this.blocked, ue.user)
+                this.blocked = ArrayUtils.remove(this.blocked, ue.get())
             }
             this.blockedEvents.next(ue)
         }))
@@ -160,12 +159,12 @@ export class FireStream extends AbstractChat implements IFireStream {
         // CONTACTS
 
         this.sm.add(this.listChangeOn(Paths.contactsPath()).subscribe(listEvent => {
-            const ue = UserEvent.from(listEvent)
+            const ue = listEvent.to(User.from(listEvent))
             if (ue.typeIs(EventType.Added)) {
-                this.contacts.push(ue.user)
+                this.contacts.push(ue.get())
             }
             else if (ue.typeIs(EventType.Removed)) {
-                this.contacts = ArrayUtils.remove(this.contacts, ue.user)
+                this.contacts = ArrayUtils.remove(this.contacts, ue.get())
             }
             this.contactEvents.next(ue)
         }))
@@ -173,8 +172,8 @@ export class FireStream extends AbstractChat implements IFireStream {
         // CONNECT TO EXISTING GROUP CHATS
 
         this.sm.add(this.listChangeOn(Paths.userChatsPath()).subscribe(listEvent => {
-            const chatEvent = ChatEvent.from(listEvent)
-            const chat = chatEvent.getChat()
+            const chatEvent = listEvent.to(Chat.from(listEvent))
+            const chat = chatEvent.get()
             if (chatEvent.typeIs(EventType.Added)) {
                 chat.connect()
                 this.chats.push(chat)
@@ -273,7 +272,7 @@ export class FireStream extends AbstractChat implements IFireStream {
     //
 
     addContact(user: User, type: ContactType): Promise<void> {
-        user.contactType = type
+        user.setContactType(type)
         return this.addUser(Paths.contactsPath(), User.contactTypeDataProvider(), user)
     }
 
@@ -326,31 +325,31 @@ export class FireStream extends AbstractChat implements IFireStream {
      * Send a read receipt
      * @return completion
      */
-    markRead(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(message.getFrom(), DeliveryReceiptType.read(), message.getId())
+    markRead(sendable: ISendable): Promise<void> {
+        return this.sendDeliveryReceipt(sendable.getFrom(), DeliveryReceiptType.read(), sendable.getId())
     }
 
     /**
      * Send a received receipt
      * @return completion
      */
-    markReceived(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(message.getFrom(), DeliveryReceiptType.received(), message.getId())
+    markReceived(sendable: ISendable): Promise<void> {
+        return this.sendDeliveryReceipt(sendable.getFrom(), DeliveryReceiptType.received(), sendable.getId())
     }
 
     //
     // Events
     //
 
-    getChatEvents(): MultiQueueSubject<ChatEvent> {
+    getChatEvents(): MultiQueueSubject<Event<IChat>> {
         return this.chatEvents
     }
 
-    getBlockedEvents(): MultiQueueSubject<UserEvent> {
+    getBlockedEvents(): MultiQueueSubject<Event<User>> {
         return this.blockedEvents
     }
 
-    getContactEvents(): MultiQueueSubject<UserEvent> {
+    getContactEvents(): MultiQueueSubject<Event<User>> {
         return this.contactEvents
     }
 

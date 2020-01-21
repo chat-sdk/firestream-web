@@ -35,12 +35,12 @@ export const createChatTest = (FS: IFireStream) => async (testUsers: User[]) => 
     for (const user of chat.getUsers()) {
         for (const testUser of testUsers) {
             if (user.equals(testUser) && !user.isMe()) {
-                if (!user.roleType!.equals(testUser.roleType!)) {
+                if (!user.equalsRoleType(testUser)) {
                     throw new Error('Role type mismatch')
                 }
             }
         }
-        if (user.isMe() && !user.roleType!.equals(RoleType.owner())) {
+        if (user.isMe() && !user.equalsRoleType(RoleType.owner())) {
             throw new Error('Creator user not owner')
         }
     }

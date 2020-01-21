@@ -2,11 +2,9 @@ import { Observable } from 'rxjs'
 
 import { User } from '../chat/user'
 import { Config } from '../config'
-import { ChatEvent } from '../events/chat-event'
+import { Event } from '../events'
 import { ConnectionEvent } from '../events/connection-event'
-import { UserEvent } from '../events/user-event'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
-import { FirebaseService } from '../firebase/service/firebase-service'
 import { Sendable } from '../message/sendable'
 import { ContactType } from '../types/contact-type'
 import { DeliveryReceiptType } from '../types/delivery-receipt-type'
@@ -100,9 +98,9 @@ export interface IFireStream extends IAbstractChat {
 
     // Events
 
-    getChatEvents(): MultiQueueSubject<ChatEvent>
-    getBlockedEvents(): MultiQueueSubject<UserEvent>
-    getContactEvents(): MultiQueueSubject<UserEvent>
+    getChatEvents(): MultiQueueSubject<Event<IChat>>
+    getBlockedEvents(): MultiQueueSubject<Event<User>>
+    getContactEvents(): MultiQueueSubject<Event<User>>
     getConnectionEvents(): Observable<ConnectionEvent>
 
 }

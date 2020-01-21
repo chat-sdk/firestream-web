@@ -3,9 +3,9 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { DataProvider, User } from '../../chat/user'
+import { Event } from '../../events'
 import { EventType } from '../../events/event-type'
-import { ListEvent } from '../../events/list-event'
-import { SendableEvent } from '../../events/sendable-event'
+import { ListData } from '../../events/list-data'
 import { Consumer } from '../../interfaces/consumer'
 import { ISendable } from '../../interfaces/sendable'
 import { Sendable } from '../../message/sendable'
@@ -25,12 +25,12 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         this.firebaseApp = firebaseApp
     }
 
-    listChangeOn(path: Path): Observable<ListEvent> {
+    listChangeOn(path: Path): Observable<Event<ListData>> {
         return new RxFirestore().onQuery(Ref.collection(path)).pipe(map(change => {
             const ds = change.doc
             if (ds.exists) {
                 const type = FirestoreCoreHandler.typeForDocumentChange(change)
-                return new ListEvent(ds.id, ds.data({ serverTimestamps: 'estimate' }), type)
+                return new Event(new ListData(ds.id, ds.data({ serverTimestamps: 'estimate' })), type)
             }
         }), RxUtils.filterTruthy)
     }
@@ -48,7 +48,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         const batch = Ref.db().batch()
 
         for (const user of users) {
-            const docRef = ref.doc(user.id)
+            const docRef = ref.doc(user.getId())
             batch.set(docRef, dataProvider.data(user))
         }
 
@@ -60,7 +60,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         const batch = Ref.db().batch()
 
         for (const user of users) {
-            const docRef = ref.doc(user.id)
+            const docRef = ref.doc(user.getId())
             batch.update(docRef, dataProvider.data(user))
         }
 
@@ -72,7 +72,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         const batch = Ref.db().batch()
 
         for (const user of users) {
-            const docRef = ref.doc(user.id)
+            const docRef = ref.doc(user.getId())
             batch.delete(docRef)
         }
 
@@ -142,7 +142,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
      * @param newerThan only listen for messages after this date
      * @return a events of errorMessage results
      */
-    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<SendableEvent> {
+    messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<Event<ISendable>> {
         let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
@@ -155,7 +155,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             const docSnapshot = docChange.doc
             if (docSnapshot.exists) {
                 const sendable = new Sendable(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' }))
-                return new SendableEvent(sendable, FirestoreCoreHandler.typeForDocumentChange(docChange))
+                return new Event(sendable, FirestoreCoreHandler.typeForDocumentChange(docChange))
             }
         }), RxUtils.filterTruthy)
     }

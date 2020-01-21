@@ -1,9 +1,9 @@
 import { empty, ErrorObserver, Observable, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { Event } from '../events'
 import { EventType } from '../events/event-type'
-import { ListEvent } from '../events/list-event'
-import { SendableEvent } from '../events/sendable-event'
+import { ListData } from '../events/list-data'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Path } from '../firebase/service/path'
@@ -52,20 +52,14 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     }
 
     /**
-     * Start listening to the current errorMessage reference and retrieve all messages
-     * @return a events of errorMessage results
-     */
-    protected messagesOn(): Observable<SendableEvent>
-    /**
      * Start listening to the current errorMessage reference and pass the messages to the events
      * @param newerThan only listen for messages after this date
      * @return a events of errorMessage results
      */
-    protected messagesOn(newerThan: Date): Observable<SendableEvent>
-    protected messagesOn(newerThan?: Date): Observable<SendableEvent> {
+    protected messagesOn(newerThan?: Date): Observable<Event<ISendable>> {
         const $events = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, FireStreamStore.config.messageHistoryLimit)
         $events.forEach(event => {
-            const sendable = event.getSendable()
+            const sendable = event.get()
             const previous = this.getSendable(sendable.getId())
             if (event.typeIs(EventType.Added)) {
                 this.sendables.push(sendable)
@@ -124,7 +118,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param path to listen to
      * @return events of list events
      */
-    protected listChangeOn(path: Path): Observable<ListEvent> {
+    protected listChangeOn(path: Path): Observable<Event<ListData>> {
         return FirebaseService.core.listChangeOn(path)
     }
 
@@ -236,27 +230,27 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * Convenience method to cast sendables and send them to the correct events
      * @param event sendable event
      */
-    protected passMessageResultToStream(event: SendableEvent) {
-        const sendable = event.getSendable()
+    protected passMessageResultToStream(event: Event<ISendable>) {
+        const sendable = event.get()
 
         FireStreamStore.debug(`Sendable: ${sendable.getType()} ${sendable.getId()}, date: ${sendable.getDate().getTime()}`)
 
         // In general, we are mostly interested when messages are added
         if (event.typeIs(EventType.Added)) {
             if (sendable.isType(SendableType.message())) {
-                this.events.getMessages().next(Message.fromSendable(sendable))
+                this.events.getMessages().next(event.to(Message.fromSendable(sendable)))
             }
             if (sendable.isType(SendableType.deliveryReceipt())) {
-                this.events.getDeliveryReceipts().next(DeliveryReceipt.fromSendable(sendable))
+                this.events.getDeliveryReceipts().next(event.to(DeliveryReceipt.fromSendable(sendable)))
             }
             if (sendable.isType(SendableType.typingState())) {
-                this.events.getTypingStates().next(TypingState.fromSendable(sendable))
+                this.events.getTypingStates().next(event.to(TypingState.fromSendable(sendable)))
             }
             if (sendable.isType(SendableType.invitation())) {
-                this.events.getInvitations().next(Invitation.fromSendable(sendable))
+                this.events.getInvitations().next(event.to(Invitation.fromSendable(sendable)))
             }
             if (sendable.isType(SendableType.presence())) {
-                this.events.getPresences().next(Presence.fromSendable(sendable))
+                this.events.getPresences().next(event.to(Presence.fromSendable(sendable)))
             }
         }
 
@@ -300,7 +294,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
         this.getSubscriptionMap().add(subscription)
     }
 
-    abstract markRead(message: Message): Promise<void>
-    abstract markReceived(message: Message): Promise<void>
+    abstract markRead(sendable: ISendable): Promise<void>
+    abstract markReceived(sendable: ISendable): Promise<void>
 
 }

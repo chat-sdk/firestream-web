@@ -1,8 +1,9 @@
 import { BehaviorSubject, Observable } from 'rxjs'
 import { filter, flatMap } from 'rxjs/operators'
 
+import { Event } from '../events'
 import { EventType } from '../events/event-type'
-import { UserEvent } from '../events/user-event'
+import { ListData } from '../events/list-data'
 import { MessageStreamFilter } from '../filter/message-stream-filter'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { FirebaseService } from '../firebase/service/firebase-service'
@@ -37,7 +38,7 @@ export class Chat extends AbstractChat implements IChat {
     protected meta = new Meta()
 
     protected users = new Array<User>()
-    protected userEvents = new MultiQueueSubject<UserEvent>()
+    protected userEvents = new MultiQueueSubject<Event<User>>()
 
     protected nameChangedEvents = new BehaviorSubject<string>('')
     protected imageURLChangedEvents = new BehaviorSubject<string>('')
@@ -64,13 +65,13 @@ export class Chat extends AbstractChat implements IChat {
                     .getMessages()
                     .allEvents()
                     .pipe(filter(MessageStreamFilter.notFromMe()))
-                    .pipe(flatMap(this.markReceived))
+                    .pipe(flatMap(event => this.markReceived(event.get())))
                     .subscribe(this))
         }
 
         this.sm.add(this.listChangeOn(Paths.chatUsersPath(this.id)).subscribe(listEvent => {
-            const userEvent = UserEvent.from(listEvent)
-            const user = userEvent.user
+            const userEvent = listEvent.to(User.from(listEvent))
+            const user = userEvent.get()
 
             this.users = ArrayUtils.remove(this.users, user)
             if (!userEvent.typeIs(EventType.Removed)) {
@@ -140,7 +141,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     getCustomData(): IJsonObject {
-        return this.meta.getData();
+        return this.meta.getData()
     }
 
     async setCustomData(data: IJsonObject): Promise<void> {
@@ -217,7 +218,7 @@ export class Chat extends AbstractChat implements IChat {
         const promises = new Array<Promise<void>>()
         for (const user of users) {
             if (!user.isMe()) {
-                promises.push(Invitation.send(user.id, InvitationType.chat(), this.id).then())
+                promises.push(Invitation.send(user.getId(), InvitationType.chat(), this.id).then())
             }
         }
         await Promise.all(promises)
@@ -226,7 +227,7 @@ export class Chat extends AbstractChat implements IChat {
     getUsersForRoleType(roleType: RoleType): User[] {
         const result = new Array<User>()
         for (const user of this.users) {
-            if (user.roleType?.equals(roleType)) {
+            if (user.equalsRoleType(roleType)) {
                 result.push(user)
             }
         }
@@ -239,14 +240,15 @@ export class Chat extends AbstractChat implements IChat {
         } else if(!this.hasPermission(RoleType.admin())) {
             throw this.adminPermissionRequired()
         }
-        user.roleType = roleType
+        user.setRoleType(roleType)
         return this.updateUser(user)
     }
 
     getRoleType(theUser: User): RoleType {
         for (const user of this.users) {
-            if (user.equals(theUser) && user.roleType) {
-                return user.roleType
+            const roleType = user.getRoleType()
+            if (user.equals(theUser) && roleType) {
+                return roleType
             }
         }
         return RoleType.none()
@@ -257,12 +259,12 @@ export class Chat extends AbstractChat implements IChat {
         if (!user.isMe() && this.hasPermission(RoleType.admin())) {
             // The owner can set users to any role apart from owner
             if (this.hasPermission(RoleType.owner())) {
-                return RoleType.allExcluding(RoleType.owner());
+                return RoleType.allExcluding(RoleType.owner())
             }
             // Admins can set the role type of non-admin users. They can't create or
             // destroy admins, only the owner can do that
-            if (!user.roleType?.equals(RoleType.admin())) {
-                return RoleType.allExcluding(RoleType.owner(), RoleType.admin());
+            if (!user.equalsRoleType(RoleType.admin())) {
+                return RoleType.allExcluding(RoleType.owner(), RoleType.admin())
             }
         }
         return []
@@ -280,7 +282,7 @@ export class Chat extends AbstractChat implements IChat {
         return this.customDataChangedEvents.asObservable()
     }
 
-    getUserEvents(): MultiQueueSubject<UserEvent> {
+    getUserEvents(): MultiQueueSubject<Event<User>> {
         return this.userEvents
     }
 
@@ -307,12 +309,12 @@ export class Chat extends AbstractChat implements IChat {
         return Send.toPath(Paths.chatMessagesPath(this.id), sendable, newId)
     }
 
-    markReceived(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), message.getId())
+    markReceived(sendable: ISendable): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), sendable.getId())
     }
 
-    markRead(message: Message): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), message.getId())
+    markRead(sendable: ISendable): Promise<void> {
+        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), sendable.getId())
     }
 
     public getMyRoleType(): RoleType {
@@ -367,16 +369,25 @@ export class Chat extends AbstractChat implements IChat {
         return chat
     }
 
-    public hasPermission(roleType: RoleType): boolean {
+    hasPermission(roleType: RoleType): boolean {
         return roleType.test(this.getRoleType(User.currentUser()))
     }
 
-    public deleteSendable(arg: Path | ISendable): Promise<void> {
+    deleteSendable(arg: Path | ISendable): Promise<void> {
         if (arg instanceof Path) {
             return super.deleteSendable(arg)
         } else {
             return super.deleteSendable(this.messagesPath().child(arg.getId()))
         }
     }
+
+    static from(listEvent: Event<ListData>): IChat {
+        const change = listEvent.get()
+        if (change.get(Keys.Date) instanceof Date) {
+            return new Chat(change.getId(), change.get(Keys.Date))
+        }
+        return new Chat(change.getId())
+    }
+
 
 }

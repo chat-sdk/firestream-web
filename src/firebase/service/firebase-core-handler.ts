@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
 
 import { DataProvider, User } from '../../chat/user'
-import { ListEvent } from '../../events/list-event'
-import { SendableEvent } from '../../events/sendable-event'
+import { Event } from '../../events'
+import { ListData } from '../../events/list-data'
 import { Consumer } from '../../interfaces/consumer'
 import { ISendable } from '../../interfaces/sendable'
 import { Path } from './path'
@@ -15,7 +15,7 @@ export abstract class FirebaseCoreHandler {
      * @param path to listen to
      * @return events of list events
      */
-    abstract listChangeOn(path: Path): Observable<ListEvent>
+    abstract listChangeOn(path: Path): Observable<Event<ListData>>
 
     /**
      * Delete a sendable from our queue
@@ -90,6 +90,6 @@ export abstract class FirebaseCoreHandler {
      * @param limit limit the maximum number of historic messages
      * @return a events of errorMessage results
      */
-    abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<SendableEvent>
+    abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<Event<ISendable>>
 
 }

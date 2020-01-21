@@ -25,7 +25,7 @@ export class FirestoreChatHandler extends FirebaseChatHandler {
     setMetaField(chatId: string, key: string, value: TJsonValue): Promise<void> {
         const chatMetaPath = Paths.chatMetaPath(chatId)
         chatMetaPath.normalizeForDocument()
-        return new RxFirestore().update(Ref.document(chatMetaPath), { [key]: value })
+        return new RxFirestore().update(Ref.document(chatMetaPath), { [chatMetaPath.dotPath(key)]: value })
     }
 
     metaOn(chatId: string): Observable<Meta> {

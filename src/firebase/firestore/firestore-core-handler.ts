@@ -161,13 +161,6 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return $sendableEvents.pipe(filter(s => !!s)) as Observable<SendableEvent>
     }
 
-    timestamp() {
-        // TODO: This should return firebase.firestore.FieldValue.serverTimestamp().
-        // At the monent this would cause an exeption when trying to push data (including the timestamp)
-        // to Firestotre: `DocumentReference.set({ date: firebase.firestore.FieldValue.serverTimestamp() })`
-        return new Date()
-    }
-
     /**
      * Firestore helper methods
      */

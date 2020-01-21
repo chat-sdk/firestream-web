@@ -67,7 +67,6 @@ export class FireStream extends AbstractChat implements IFireStream {
             FirebaseService.chat = new FirestoreChatHandler()
         }
         if (FireStreamStore.config.database == Config.DatabaseType.Realtime) {
-            // this.firebaseService = new RealtimeService()
         }
 
         app.auth().onAuthStateChanged(async user => {

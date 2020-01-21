@@ -134,7 +134,7 @@ export class Chat extends AbstractChat implements IChat {
             throw this.adminPermissionRequired()
         } else if (this.meta.getImageURL() !== url) {
             await FirebaseService.chat.setMetaField(this.getId(), Keys.ImageURL, url)
-            this.meta.setImageURL(name)
+            this.meta.setImageURL(url)
         }
     }
 

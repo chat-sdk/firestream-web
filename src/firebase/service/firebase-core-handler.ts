@@ -92,10 +92,4 @@ export abstract class FirebaseCoreHandler {
      */
     abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<SendableEvent>
 
-    /**
-     * Return a Firebase timestamp object
-     * @return appropriate server timestamp object
-     */
-    abstract timestamp(): any
-
 }

@@ -1,3 +1,5 @@
+import { ErrorMessage } from './error-messages'
+
 export class Config {
 
     /**
@@ -50,7 +52,7 @@ export class Config {
         if (this.pathValid(this.root)) {
             this.root = root;
         } else {
-            throw new Error('R.string.error_invalid_path')
+            throw new Error(ErrorMessage.invalid_path)
         }
     }
 
@@ -58,7 +60,7 @@ export class Config {
         if (this.pathValid(this.sandbox)) {
             this.sandbox = sandbox;
         } else {
-            throw new Error('R.string.error_invalid_path')
+            throw new Error(ErrorMessage.invalid_path)
         }
     }
 

@@ -1,0 +1,17 @@
+export namespace ErrorMessage {
+    export const null_snapshot = 'Snapshot is null'
+    export const no_authenticated_user = 'Firebase must be authenticated to connect'
+    export const initialize_not_run = 'You need to call FireStream.shared().initialize(…)'
+    export const null_firebase_app = 'FireStreamStore.app returned undefined'
+    export const null_config = 'FireStreamStore.config needs to be set'
+    export const null_data = 'Null data returned'
+    export const no_value = 'No value present'
+    export const mismatched_doc_reference = 'DocumentReference expected but path points to collection'
+    export const mismatched_col_reference = 'CollectionReference expected but path points to document'
+    export const owner_permission_required = 'You must be a group owner to perform this action'
+    export const admin_permission_required = 'You must be a group admin to perform this action'
+    export const member_permission_required = 'You must be a group member to perform this action'
+    export const write_cancelled = 'Write cancelled'
+    export const invalid_path = 'Invalid path, path can only contain letters, numbers and underscores'
+    export const group_must_be_empty_to_close = 'Remove the other users before you can delete the group'
+}

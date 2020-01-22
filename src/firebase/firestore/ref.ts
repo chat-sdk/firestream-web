@@ -1,5 +1,6 @@
 import { firestore } from 'firebase/app'
 
+import { ErrorMessage } from '../../error-messages'
 import { FireStreamStore } from '../../firestream-store'
 import { Path } from '../service/path'
 
@@ -10,8 +11,8 @@ export class Ref {
         if (ref instanceof firestore.CollectionReference) {
             return ref
         } else {
-            FireStreamStore.debug('CollectionReference expected but path points to document')
-            throw new Error('CollectionReference expected but path points to document')
+            FireStreamStore.debug(ErrorMessage.mismatched_col_reference)
+            throw new Error(ErrorMessage.mismatched_col_reference)
         }
     }
 
@@ -20,8 +21,8 @@ export class Ref {
         if (ref instanceof firestore.DocumentReference) {
             return ref
         } else {
-            FireStreamStore.debug('DocumentReference expected but path points to collection')
-            throw new Error('DocumentReference expected but path points to collection')
+            FireStreamStore.debug(ErrorMessage.mismatched_doc_reference)
+            throw new Error(ErrorMessage.mismatched_doc_reference)
         }
     }
 
@@ -42,7 +43,7 @@ export class Ref {
     static db(): firestore.Firestore {
         const app = FireStreamStore.app
         if (!app) {
-            throw new Error('FireStreamStore.app returned undefined')
+            throw new Error(ErrorMessage.null_firebase_app)
         }
         return app.firestore()
     }

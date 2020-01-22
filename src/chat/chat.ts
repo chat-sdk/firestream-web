@@ -1,6 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs'
 import { filter, flatMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '../error-messages'
 import { Event } from '../events'
 import { EventType } from '../events/event-type'
 import { ListData } from '../events/list-data'
@@ -101,7 +102,7 @@ export class Chat extends AbstractChat implements IChat {
     async leave(): Promise<void> {
         if (this.getMyRoleType().equals(RoleType.owner()) && this.getUsers().length > 1) {
             if (this.getUsers().length > 1) {
-                throw new Error('Remove the other users before you can delete the group')
+                throw new Error(ErrorMessage.group_must_be_empty_to_close)
             } else {
                 // TODO: This code block will never be reached
                 return this.delete().then(this.disconnect)
@@ -345,15 +346,15 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     protected ownerPermissionRequired(): Error {
-        return new Error('owner_permission_required')
+        return new Error(ErrorMessage.owner_permission_required)
     }
 
     protected adminPermissionRequired(): Error {
-        return new Error('admin_permission_required')
+        return new Error(ErrorMessage.admin_permission_required)
     }
 
     protected memberPermissionRequired(): Error {
-        return new Error('member_permission_required')
+        return new Error(ErrorMessage.member_permission_required)
     }
 
     static async create(name: string, imageURL: string, data?: IJsonObject, users?: User[]): Promise<Chat> {

@@ -5,6 +5,7 @@ import { AbstractChat } from './chat/abstract-chat'
 import { Chat } from './chat/chat'
 import { User } from './chat/user'
 import { Config } from './config'
+import { ErrorMessage } from './error-messages'
 import { Event } from './events'
 import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
@@ -95,10 +96,10 @@ export class FireStream extends AbstractChat implements IFireStream {
 
     async connect(): Promise<void> {
         if (!this.isInitialized()) {
-            throw new Error('You need to call FireStream.shared().initialize(…)')
+            throw new Error(ErrorMessage.initialize_not_run)
         }
         if (FirebaseService.user == null) {
-            throw new Error('Firebase must be authenticated to connect')
+            throw new Error(ErrorMessage.no_authenticated_user)
         }
 
         this.connectionEvents.next(ConnectionEvent.willConnect())

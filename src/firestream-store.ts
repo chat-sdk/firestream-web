@@ -1,6 +1,7 @@
 import { app, database, firestore, User } from 'firebase/app'
 
 import { Config } from './config'
+import { ErrorMessage } from './error-messages'
 
 export class FireStreamStore {
 
@@ -30,7 +31,7 @@ export class FireStreamStore {
 
     static get config(): Config {
         if (!this.shared._config) {
-            throw new Error('FireStreamStore.config needs to be set')
+            throw new Error(ErrorMessage.null_config)
         }
         return this.shared._config
     }
@@ -45,7 +46,7 @@ export class FireStreamStore {
      */
     static get userId(): string {
         if (!this.user) {
-            throw new Error('User is not authenticated')
+            throw new Error(ErrorMessage.no_authenticated_user)
         }
         return this.user.uid
     }

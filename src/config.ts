@@ -41,7 +41,7 @@ export class Config {
     /**
      * Which database to use - Firestore or Realtime database
      */
-    database = Config.DatabaseType.Firestore
+    database = Config.DatabaseType.Realtime
 
     /**
      * Should debug log messages be shown?

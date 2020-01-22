@@ -62,44 +62,44 @@ export class RoleType extends BaseType {
         return { [Keys.Role]: this.get() }
     }
 
-    test(roleType?: RoleType): boolean {
-        return roleType !== undefined && roleType.toLevel() <= this.toLevel()
+    test(permission?: RoleType): boolean {
+        return permission !== undefined && this.toLevel() <= permission.toLevel()
     }
 
     protected toLevel(): number {
         if (this.type === RoleType.Owner) {
-            return 0;
+            return 0
         }
         if (this.type === RoleType.Admin) {
-            return 1;
+            return 1
         }
         if (this.type === RoleType.Member) {
-            return 2;
+            return 2
         }
         if (this.type === RoleType.Watcher) {
-            return 3;
+            return 3
         }
         if (this.type === RoleType.Banned) {
-            return 4;
+            return 4
         }
-        return 5;
+        return 5
     }
 
     toString(): string {
         if (this.equals(RoleType.owner())) {
-            return 'owner'
+            return 'Owner'
         }
         if (this.equals(RoleType.admin())) {
-            return 'admin'
+            return 'Admin'
         }
         if (this.equals(RoleType.member())) {
-            return 'member'
+            return 'Member'
         }
         if (this.equals(RoleType.watcher())) {
-            return 'watcher'
+            return 'Watcher'
         }
         if (this.equals(RoleType.banned())) {
-            return 'banned'
+            return 'Banned'
         }
         return ''
     }

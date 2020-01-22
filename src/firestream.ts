@@ -12,6 +12,8 @@ import { EventType } from './events/event-type'
 import { MessageStreamFilter } from './filter/message-stream-filter'
 import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
 import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
+import { RealtimeChatHandler } from './firebase/realtime/realtime-chat-handler'
+import { RealtimeCoreHandler } from './firebase/realtime/realtime-core-handler'
 import { MultiQueueSubject } from './firebase/rx/multi-queue-subject'
 import { FirebaseService } from './firebase/service/firebase-service'
 import { Path } from './firebase/service/path'
@@ -68,6 +70,8 @@ export class FireStream extends AbstractChat implements IFireStream {
             FirebaseService.chat = new FirestoreChatHandler()
         }
         if (FireStreamStore.config.database == Config.DatabaseType.Realtime) {
+            FirebaseService.core = new RealtimeCoreHandler()
+            FirebaseService.chat = new RealtimeChatHandler()
         }
 
         app.auth().onAuthStateChanged(async user => {

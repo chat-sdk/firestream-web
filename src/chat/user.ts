@@ -112,11 +112,13 @@ export class User {
     }
 
     static from(event: Event<ListData>): User {
-        if (event.get().get(Keys.Role) instanceof String) {
-            return new User(event.get().getId(), new RoleType(event.get().get(Keys.Role)))
+        const rawRoleType = event.get().get(Keys.Role)
+        if (typeof rawRoleType === 'string') {
+            return new User(event.get().getId(), new RoleType(rawRoleType))
         }
-        if (event.get().get(Keys.Type) instanceof String) {
-            return new User(event.get().getId(), new ContactType(event.get().get(Keys.Type)))
+        const rawType = event.get().get(Keys.Type)
+        if (typeof rawType === 'string') {
+            return new User(event.get().getId(), new ContactType(rawType))
         }
         return new User(event.get().getId())
     }

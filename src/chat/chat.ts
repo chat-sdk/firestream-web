@@ -370,8 +370,8 @@ export class Chat extends AbstractChat implements IChat {
         return chat
     }
 
-    hasPermission(roleType: RoleType): boolean {
-        return roleType.test(this.getRoleType(User.expectCurrentUser()))
+    hasPermission(permission: RoleType): boolean {
+        return this.getMyRoleType().test(permission)
     }
 
     deleteSendable(arg: Path | ISendable): Promise<void> {

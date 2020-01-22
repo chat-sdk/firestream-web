@@ -1,5 +1,6 @@
 import 'mocha'
 import 'firebase/auth'
+import 'firebase/database'
 import 'firebase/firestore'
 
 import { initializeApp } from 'firebase/app'

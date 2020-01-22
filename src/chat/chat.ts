@@ -108,7 +108,7 @@ export class Chat extends AbstractChat implements IChat {
                 return this.delete().then(this.disconnect)
             }
         }
-        return this.removeUser(User.currentUser()).then(this.disconnect)
+        return this.removeUser(User.expectCurrentUser()).then(this.disconnect)
     }
 
     protected delete(): Promise<void> {
@@ -319,7 +319,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     public getMyRoleType(): RoleType {
-        return this.getRoleType(User.currentUser())
+        return this.getRoleType(User.expectCurrentUser())
     }
 
     equals(chat: any): boolean {
@@ -363,15 +363,15 @@ export class Chat extends AbstractChat implements IChat {
         const chat = new Chat(chatId, undefined, new Meta(name, imageURL, data))
 
         // Make sure the current user is the owner
-        const usersToAdd = ArrayUtils.remove(users || [], User.currentUser())
-        usersToAdd.push(User.currentUser(RoleType.owner()))
+        const usersToAdd = ArrayUtils.remove(users || [], User.expectCurrentUser())
+        usersToAdd.push(User.expectCurrentUser(RoleType.owner()))
 
         await chat.addUsers(true, usersToAdd)
         return chat
     }
 
     hasPermission(roleType: RoleType): boolean {
-        return roleType.test(this.getRoleType(User.currentUser()))
+        return roleType.test(this.getRoleType(User.expectCurrentUser()))
     }
 
     deleteSendable(arg: Path | ISendable): Promise<void> {

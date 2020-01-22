@@ -4,6 +4,7 @@ import { Keys } from '../firebase/service/keys'
 import { FireStreamStore } from '../firestream-store'
 import { ContactType } from '../types/contact-type'
 import { RoleType } from '../types/role-type'
+import { expect } from '../utils/expect'
 
 export interface DataProvider {
     data(user?: User): { [key: string]: any }
@@ -79,8 +80,15 @@ export class User {
         return this.id === FireStreamStore.userId
     }
 
-    static currentUser(role?: RoleType): User {
-        return new User(FireStreamStore.userId, role)
+    static currentUser(role?: RoleType): User | undefined {
+        const uid = FireStreamStore.userId
+        if (uid) {
+            return new User(uid, role)
+        }
+    }
+
+    static expectCurrentUser(role?: RoleType): User {
+        return expect(this.currentUser(), 'User.currentUser()')
     }
 
     static dateDataProvider(): DataProvider {

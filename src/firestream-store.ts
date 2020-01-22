@@ -2,6 +2,7 @@ import { app, database, firestore, User } from 'firebase/app'
 
 import { Config } from './config'
 import { ErrorMessage } from './error-messages'
+import { expect } from './utils/expect'
 
 export class FireStreamStore {
 
@@ -44,11 +45,12 @@ export class FireStreamStore {
      * Get the User ID of the currently authenticated user.
      * @throws if no user is authenticated
      */
-    static get userId(): string {
-        if (!this.user) {
-            throw new Error(ErrorMessage.no_authenticated_user)
-        }
-        return this.user.uid
+    static get userId(): string | undefined {
+        return this.user?.uid
+    }
+
+    static expectUserId(): string {
+        return expect(this.userId, 'FireStreamStore.userId')
     }
 
     /**

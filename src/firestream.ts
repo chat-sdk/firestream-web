@@ -59,12 +59,12 @@ export class FireStream extends AbstractChat implements IFireStream {
     protected chats = new Array<IChat>()
 
     initialize(app: firebase.app.App, config?: Config) {
-        FirebaseService.setApp(app)
+        FireStreamStore.setApp(app)
 
         FireStreamStore.setConfig(config || new Config())
 
-        if (FireStreamStore.config.database == Config.DatabaseType.Firestore && FirebaseService.app) {
-            FirebaseService.core = new FirestoreCoreHandler(FirebaseService.app)
+        if (FireStreamStore.config.database == Config.DatabaseType.Firestore && FireStreamStore.app) {
+            FirebaseService.core = new FirestoreCoreHandler(FireStreamStore.app)
             FirebaseService.chat = new FirestoreChatHandler()
         }
         if (FireStreamStore.config.database == Config.DatabaseType.Realtime) {
@@ -98,7 +98,7 @@ export class FireStream extends AbstractChat implements IFireStream {
         if (!this.isInitialized()) {
             throw new Error(ErrorMessage.initialize_not_run)
         }
-        if (FirebaseService.user == null) {
+        if (FireStreamStore.user == null) {
             throw new Error(ErrorMessage.no_authenticated_user)
         }
 
@@ -204,8 +204,8 @@ export class FireStream extends AbstractChat implements IFireStream {
         this.connectionEvents.next(ConnectionEvent.didDisconnect())
     }
 
-    currentUserId(): string {
-        return FirebaseService.userId
+    currentUserId(): string | undefined {
+        return FireStreamStore.userId
     }
 
     //
@@ -370,8 +370,11 @@ export class FireStream extends AbstractChat implements IFireStream {
         }
     }
 
-    currentUser(): User {
-        return new User(this.currentUserId())
+    currentUser(): User | undefined {
+        const uid = this.currentUserId()
+        if (uid) {
+            return new User(uid)
+        }
     }
 
     protected messagesPath(): Path {

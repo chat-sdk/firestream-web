@@ -1,5 +1,5 @@
 import { Event, EventType } from '../events'
-import { FirebaseService } from '../firebase/service/firebase-service'
+import { FireStreamStore } from '../firestream-store'
 import { ISendable } from '../interfaces/sendable'
 import { SendableType } from '../types/sendable-types'
 
@@ -19,7 +19,7 @@ export class MessageStreamFilter {
     }
 
     static notFromMe<T extends ISendable>(): Predicate<Event<T>> {
-        return (event: Event<T>) => event.get().getFrom() !== FirebaseService.userId
+        return (event: Event<T>) => event.get().getFrom() !== FireStreamStore.userId
     }
 
     static byEventType(...types: EventType[]): Predicate<Event<ISendable>> {

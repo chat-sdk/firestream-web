@@ -13,11 +13,7 @@ export class Sendable extends BaseMessage implements ISendable {
         super()
 
         if (!id || !data) {
-            try {
-                this.from = FireStreamStore.userId
-            } catch (err) {
-                console.error(err)
-            }
+            this.from = FireStreamStore.expectUserId()
             return
         }
 

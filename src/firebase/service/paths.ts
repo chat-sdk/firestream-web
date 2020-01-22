@@ -39,7 +39,7 @@ export class Paths extends Keys {
     }
 
     protected static currentUserId(): string {
-        return FireStreamStore.userId
+        return FireStreamStore.expectUserId()
     }
 
     static contactsPath(): Path {

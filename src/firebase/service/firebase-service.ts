@@ -20,33 +20,13 @@ export class FirebaseService {
         return this.instance
     }
 
-    static setApp(app?: app.App) {
-        FireStreamStore.setApp(app)
-    }
-
-    static get app(): app.App | undefined {
-        return FireStreamStore.app
-    }
-
-    static get user(): User | undefined {
-        return FireStreamStore.user
-    }
-
-    /**
-     * Get the User ID of the currently authenticated user.
-     * @throws if no user is authenticated
-     */
-    static get userId(): string {
-        return FireStreamStore.userId
-    }
-
     static set core(coreHandler: FirebaseCoreHandler) {
         this.shared._core = coreHandler
     }
 
     static get core(): FirebaseCoreHandler {
         if (!this.shared._core) {
-            this.shared._core = new FirestoreCoreHandler(this.app!)
+            this.shared._core = new FirestoreCoreHandler(FireStreamStore.app!)
         }
         return this.shared._core
     }

@@ -88,7 +88,7 @@ export class User {
     }
 
     static expectCurrentUser(role?: RoleType): User {
-        return expect(this.currentUser(), 'User.currentUser()')
+        return expect(this.currentUser(role), 'User.currentUser()')
     }
 
     static dateDataProvider(): DataProvider {

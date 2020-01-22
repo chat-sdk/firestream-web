@@ -81,7 +81,7 @@ export class Meta {
         }
     }
 
-    toData(includeTimestamp = false): IJsonObject {
+    toData(): IJsonObject {
         const data: IJsonObject = {}
 
         if (this.name != null) {

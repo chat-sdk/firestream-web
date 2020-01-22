@@ -358,7 +358,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     static async create(name: string, imageURL: string, data?: IJsonObject, users?: User[]): Promise<Chat> {
-        const meta = Meta.from(name, imageURL, data).addTimestamp().wrap().toData(true)
+        const meta = Meta.from(name, imageURL, data).addTimestamp().wrap().toData()
         const chatId = await FirebaseService.chat.add(meta)
         const chat = new Chat(chatId, undefined, new Meta(name, imageURL, data))
 

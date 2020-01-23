@@ -236,24 +236,21 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
         FireStreamStore.debug(`Sendable: ${sendable.getType()} ${sendable.getId()}, date: ${sendable.getDate().getTime()}`)
 
         // In general, we are mostly interested when messages are added
-        if (event.typeIs(EventType.Added)) {
-            if (sendable.isType(SendableType.message())) {
-                this.events.getMessages().next(event.to(Message.fromSendable(sendable)))
-            }
-            if (sendable.isType(SendableType.deliveryReceipt())) {
-                this.events.getDeliveryReceipts().next(event.to(DeliveryReceipt.fromSendable(sendable)))
-            }
-            if (sendable.isType(SendableType.typingState())) {
-                this.events.getTypingStates().next(event.to(TypingState.fromSendable(sendable)))
-            }
-            if (sendable.isType(SendableType.invitation())) {
-                this.events.getInvitations().next(event.to(Invitation.fromSendable(sendable)))
-            }
-            if (sendable.isType(SendableType.presence())) {
-                this.events.getPresences().next(event.to(Presence.fromSendable(sendable)))
-            }
+        if (sendable.isType(SendableType.message())) {
+            this.events.getMessages().next(event.to(Message.fromSendable(sendable)))
         }
-
+        if (sendable.isType(SendableType.deliveryReceipt())) {
+            this.events.getDeliveryReceipts().next(event.to(DeliveryReceipt.fromSendable(sendable)))
+        }
+        if (sendable.isType(SendableType.typingState())) {
+            this.events.getTypingStates().next(event.to(TypingState.fromSendable(sendable)))
+        }
+        if (sendable.isType(SendableType.invitation())) {
+            this.events.getInvitations().next(event.to(Invitation.fromSendable(sendable)))
+        }
+        if (sendable.isType(SendableType.presence())) {
+            this.events.getPresences().next(event.to(Presence.fromSendable(sendable)))
+        }
     }
 
     getSendables(type?: SendableType): ISendable[] {

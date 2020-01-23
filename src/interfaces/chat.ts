@@ -156,13 +156,13 @@ export interface IChat extends IAbstractChat {
      * @param user to who's role to find
      * @return role of user in the chat
      */
-    getRoleType(user: User): RoleType
+    getRoleType(user: User): RoleType | undefined
 
     /**
      * Get the role for the current user
      * @return role
      */
-    getMyRoleType(): RoleType
+    getMyRoleType(): RoleType | undefined
 
     /**
      * Get a list of roles that this user could be changed to. This will vary

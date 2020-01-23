@@ -100,7 +100,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     async leave(): Promise<void> {
-        if (this.getMyRoleType().equals(RoleType.owner()) && this.getUsers().length > 1) {
+        if (this.getMyRoleType()?.equals(RoleType.owner()) && this.getUsers().length > 1) {
             if (this.getUsers().length > 1) {
                 throw new Error(ErrorMessage.group_must_be_empty_to_close)
             } else {
@@ -245,14 +245,13 @@ export class Chat extends AbstractChat implements IChat {
         return this.updateUser(user)
     }
 
-    getRoleType(theUser: User): RoleType {
+    getRoleType(theUser: User): RoleType | undefined {
         for (const user of this.users) {
             const roleType = user.getRoleType()
             if (user.equals(theUser) && roleType) {
                 return roleType
             }
         }
-        return RoleType.none()
     }
 
     getAvailableRoles(user: User): RoleType[] {
@@ -318,7 +317,7 @@ export class Chat extends AbstractChat implements IChat {
         return this.sendDeliveryReceipt(DeliveryReceiptType.read(), sendable.getId())
     }
 
-    public getMyRoleType(): RoleType {
+    public getMyRoleType(): RoleType | undefined {
         return this.getRoleType(User.expectCurrentUser())
     }
 
@@ -371,7 +370,7 @@ export class Chat extends AbstractChat implements IChat {
     }
 
     hasPermission(permission: RoleType): boolean {
-        return this.getMyRoleType().test(permission)
+        return this.getMyRoleType()?.test(permission) || false
     }
 
     deleteSendable(arg: Path | ISendable): Promise<void> {

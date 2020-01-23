@@ -54,10 +54,6 @@ export class RoleType extends BaseType {
         return new RoleType(this.Banned)
     }
 
-    static none(): RoleType {
-        return new RoleType('')
-    }
-
     data(): IJsonObject {
         return { [Keys.Role]: this.get() }
     }

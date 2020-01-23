@@ -83,18 +83,18 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.orderBy(Keys.Date, 'asc')
-        if (fromDate) {
+        if (fromDate != null) {
             query = query.where(Keys.Date, '>', fromDate)
         }
-        if (toDate) {
+        if (toDate != null) {
             query = query.where(Keys.Date, '<=', toDate)
         }
 
-        if (limit) {
-            if (fromDate) {
+        if (limit != null) {
+            if (fromDate != null) {
                 query = query.limit(limit)
             }
-            if (toDate) {
+            if (toDate != null) {
                 query = query.limitToLast(limit)
             }
         }
@@ -106,7 +106,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
                 const docSnapshot = docChange.doc
                 // Add the message
                 if (docSnapshot.exists && docChange.type === 'added') {
-                    const sendable = new Sendable(docSnapshot.id, docSnapshot.data())
+                    const sendable = this.sendableFromSnapshot(docSnapshot)
                     sendables.push(sendable)
                 }
             }
@@ -128,7 +128,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             if (changes.length > 0) {
                 const change = changes[0]
                 if (change.doc.exists) {
-                    const sendable = new Sendable('id', change.doc.data())
+                    const sendable = this.sendableFromSnapshot(change.doc)
                     return sendable.getDate()
                 }
             }
@@ -154,7 +154,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         return new RxFirestore().onQuery(query).pipe(map(docChange => {
             const docSnapshot = docChange.doc
             if (docSnapshot.exists) {
-                const sendable = new Sendable(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' }))
+                const sendable = this.sendableFromSnapshot(docSnapshot)
                 return new Event(sendable, FirestoreCoreHandler.typeForDocumentChange(docChange))
             }
         }), RxUtils.filterTruthy)
@@ -163,6 +163,28 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     /**
      * Firestore helper methods
      */
+
+    sendableFromSnapshot(snapshot: firestore.DocumentSnapshot): ISendable {
+        const sendable = new Sendable()
+        sendable.setId(snapshot.id)
+        const from = snapshot.get(Keys.From)
+        const timestamp = snapshot.get(Keys.Date, { serverTimestamps: 'estimate' })
+        const body = snapshot.get(Keys.Body)
+        const type = snapshot.get(Keys.Type)
+        if (typeof from === 'string') {
+            sendable.setFrom(from)
+        }
+        if (timestamp instanceof firestore.Timestamp) {
+            sendable.setDate(timestamp.toDate())
+        }
+        if (typeof body === 'object') {
+            sendable.setBody(body)
+        }
+        if (typeof type === 'string') {
+            sendable.setType(type)
+        }
+        return sendable
+    }
 
     /**
      * Run a Firestore batch operation

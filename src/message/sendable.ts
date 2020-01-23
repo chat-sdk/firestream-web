@@ -24,6 +24,8 @@ export class Sendable extends BaseMessage implements ISendable {
         }
         if (data[Keys.Date] instanceof Date) {
             this.date = data[Keys.Date] as Date
+        } else {
+            throw new Error('Expected Date: ' + data[Keys.Date])
         }
         if (typeof data[Keys.Body] === 'object') {
             this.body = data[Keys.Body] as IJsonObject

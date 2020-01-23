@@ -16,6 +16,7 @@ import { deleteContactTest } from './delete-contact.spec'
 import { firebaseConfig } from './firebase-config'
 import { getContactAddedTest } from './get-contact-added.spec'
 import { getContactRemovedTest } from './get-contact-removed.spec'
+import { messageChatTest } from './message-chat.spec'
 import { modifyChatTest } from './modify-chat.spec'
 
 const sm = new SubscriptionMap()
@@ -78,5 +79,10 @@ describe('perform tests', function() {
     it('modify chat', async () => {
         await connected
         return modifyChatTest(F.S, sm)(testUsers)
+    })
+
+    it('message chat', async () => {
+        await connected
+        return messageChatTest(F.S, sm)()
     })
 })

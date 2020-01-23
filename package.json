@@ -9,7 +9,7 @@
   "scripts": {
     "start": "onchange 'src/**/*.ts' -- npm run build",
     "build": "tsc",
-    "test": "npm run build && mocha -r ts-node/register tests/**/*.spec.ts"
+    "test": "mocha -r ts-node/register tests/**/*.spec.ts"
   },
   "dependencies": {
     "firebase": "^7.6.2",

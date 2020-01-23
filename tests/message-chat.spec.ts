@@ -1,9 +1,9 @@
-import { DeliveryReceiptType, IFireStream, SendableType, TypingStateType } from '../lib'
-import { SubscriptionMap } from '../lib/firebase/rx/subscription-map'
-import { DeliveryReceipt } from '../lib/message/delivery-receipt'
-import { Message } from '../lib/message/message'
-import { TextMessage } from '../lib/message/text-message'
-import { TypingState } from '../lib/message/typing-state'
+import { DeliveryReceiptType, IFireStream, SendableType, TypingStateType } from '../src'
+import { SubscriptionMap } from '../src/firebase/rx/subscription-map'
+import { DeliveryReceipt } from '../src/message/delivery-receipt'
+import { Message } from '../src/message/message'
+import { TextMessage } from '../src/message/text-message'
+import { TypingState } from '../src/message/typing-state'
 
 const messageText = (): string => {
     return 'Test'

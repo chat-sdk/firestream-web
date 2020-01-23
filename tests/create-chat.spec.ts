@@ -1,12 +1,12 @@
-import { IFireStream } from '../lib'
-import { User } from '../lib/chat'
-import { RoleType } from '../lib/types'
+import { IFireStream } from '../src'
+import { User } from '../src/chat'
+import { RoleType } from '../src/types'
 
 export const createChatTest = (FS: IFireStream) => async (testUsers: User[]) => {
     const chatName = 'Test'
     const chatImageUrl = 'https://chatsdk.co/wp-content/uploads/2017/01/image_message-407x389.jpg'
     const customData = {
-        TestKey:  'TestValue',
+        TestKey: 'TestValue',
         Key2: 999,
     }
 

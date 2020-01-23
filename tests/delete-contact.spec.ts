@@ -1,5 +1,5 @@
-import { IFireStream } from '../lib'
-import { User } from '../lib/chat'
+import { IFireStream } from '../src'
+import { User } from '../src/chat'
 
 export const deleteContactTest = (FS: IFireStream) => async (testUser: User) => {
     await FS.removeContact(testUser)

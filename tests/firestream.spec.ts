@@ -5,11 +5,11 @@ import 'firebase/firestore'
 
 import { initializeApp } from 'firebase/app'
 
-import { F } from '../'
-import { User } from '../lib/chat'
-import { ConnectionEventType } from '../lib/events'
-import { SubscriptionMap } from '../lib/firebase/rx/subscription-map'
-import { RoleType } from '../lib/types'
+import { User } from '../src/chat'
+import { ConnectionEventType } from '../src/events'
+import { SubscriptionMap } from '../src/firebase/rx/subscription-map'
+import { F } from '../src/index'
+import { RoleType } from '../src/types'
 import { addContactTest } from './add-contact.spec'
 import { createChatTest } from './create-chat.spec'
 import { deleteContactTest } from './delete-contact.spec'
@@ -48,7 +48,7 @@ const testUsers = [testUserJohn, testUserAlex, testUserMike]
 
 describe('perform tests', function() {
     this.timeout(10000)
-    
+
     const connected = connect()
 
     it('add contact', async () => {

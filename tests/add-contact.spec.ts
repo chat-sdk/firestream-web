@@ -1,6 +1,6 @@
-import { IFireStream } from '../lib'
-import { User } from '../lib/chat'
-import { ContactType } from '../lib/types'
+import { IFireStream } from '../src'
+import { User } from '../src/chat'
+import { ContactType } from '../src/types'
 
 export const addContactTest = (FS: IFireStream) => async (testUser: User) => {
     await FS.addContact(testUser, ContactType.contact())

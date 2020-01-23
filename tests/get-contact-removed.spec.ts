@@ -1,5 +1,5 @@
-import { EventType, IFireStream } from '../lib'
-import { User } from '../lib/chat'
+import { EventType, IFireStream } from '../src'
+import { User } from '../src/chat'
 
 export const getContactRemovedTest = (FS: IFireStream) => async (testUser: User) => {
     return new Promise((resolve, reject) => {

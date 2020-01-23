@@ -47,7 +47,7 @@ const testUserMike = new User('utSRkZHrNghKKRFlptTzziqqM7I3', RoleType.banned())
 const testUsers = [testUserJohn, testUserAlex, testUserMike]
 
 describe('perform tests', function() {
-    this.timeout(10000)
+    this.timeout(20000)
 
     const connected = connect()
 

@@ -36,7 +36,7 @@ export class Config {
      * This will be the sandbox of the FireStream Firebase database i.e.
      * /root/[sandbox]/users
      */
-    protected sandbox = 'pepe'
+    protected sandbox = 'prod'
 
     /**
      * Which database to use - Firestore or Realtime database

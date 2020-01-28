@@ -86,7 +86,7 @@ export class RealtimeCoreHandler extends FirebaseCoreHandler {
         let query = Ref.get(messagesPath) as database.Query
 
         query = query.equalTo(FireStreamStore.userId || null, Keys.From)
-        query = query.orderByChild(Keys.Date)
+        query = query.orderByChild(Keys.From)
         query = query.limitToLast(1)
 
         const snapshot = await new RxRealtime().get(query)

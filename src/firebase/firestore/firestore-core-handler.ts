@@ -118,7 +118,7 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
         let query = Ref.collection(messagesPath) as firestore.Query
 
         query = query.where(Keys.From, '==', this.firebaseApp.auth().currentUser?.uid)
-        query = query.orderBy(Keys.Date, 'desc')
+        query = query.orderBy(Keys.From, 'desc')
         query = query.limit(1)
 
         const snapshot = await new RxFirestore().get(query)

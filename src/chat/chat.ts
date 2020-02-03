@@ -5,10 +5,10 @@ import { ErrorMessage } from '../error-messages'
 import { Event } from '../events'
 import { EventType } from '../events/event-type'
 import { ListData } from '../events/list-data'
-import { Filter } from '../filter/filter'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Keys } from '../firebase/service/keys'
+import { MuteService } from '../firebase/service/mute-serve'
 import { Path } from '../firebase/service/path'
 import { Paths } from '../firebase/service/paths'
 import { FireStreamStore } from '../firestream-store'
@@ -399,5 +399,20 @@ export class Chat extends AbstractChat implements IChat {
         return new Chat(change.getId())
     }
 
+    mute(until?: Date): Promise<void> {
+        return MuteService.mute(this.getId(), until)
+    }
+
+    unmute(): Promise<void> {
+        return MuteService.unmute(this.getId())
+    }
+
+    mutedUntil(): Date | undefined {
+        return MuteService.mutedUntil(this.getId())
+    }
+
+    isMuted(): boolean {
+        return MuteService.isMuted(this.getId())
+    }
 
 }

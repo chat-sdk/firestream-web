@@ -4,6 +4,7 @@ import { DataProvider, User } from '../../chat/user'
 import { Event } from '../../events'
 import { ListData } from '../../events/list-data'
 import { Consumer } from '../../interfaces/consumer'
+import { IJsonObject } from '../../interfaces/json'
 import { ISendable } from '../../interfaces/sendable'
 import { Path } from './path'
 
@@ -91,5 +92,8 @@ export abstract class FirebaseCoreHandler {
      * @return a events of message results
      */
     abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<Event<ISendable>>
+
+    abstract mute(path: Path, data: IJsonObject): Promise<void>
+    abstract unmute(path: Path): Promise<void>
 
 }

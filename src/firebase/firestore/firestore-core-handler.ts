@@ -7,6 +7,7 @@ import { Event } from '../../events'
 import { EventType } from '../../events/event-type'
 import { ListData } from '../../events/list-data'
 import { Consumer } from '../../interfaces/consumer'
+import { IJsonObject } from '../../interfaces/json'
 import { ISendable } from '../../interfaces/sendable'
 import { Sendable } from '../../message/sendable'
 import { RxUtils } from '../../utils/rx-utils'
@@ -206,6 +207,14 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
             default:
                 return EventType.None
         }
+    }
+
+    mute(path: Path, data: IJsonObject): Promise<void> {
+        return new RxFirestore().set(Ref.document(path), data)
+    }
+
+    unmute(path: Path): Promise<void> {
+        return new RxFirestore().delete(Ref.document(path))
     }
 
 }

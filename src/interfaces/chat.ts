@@ -314,4 +314,35 @@ export interface IChat extends IAbstractChat {
     markRead(sendable: ISendable): Promise<void>
     markRead(sendableId: string): Promise<void>
 
+    /**
+     * Mute notifications for a user
+     * @return completion
+     */
+    mute(): Promise<void>
+
+    /**
+     * Mute notifications for a user
+     * @param until mute the thread until this date
+     * @return completion
+     */
+    mute(until: Date): Promise<void>
+
+    /**
+     * Unmute notifications for a user
+     * @return completion
+     */
+    unmute(): Promise<void>
+
+    /**
+     * Is a user muted?
+     * @return true / false
+     */
+    isMuted(): boolean
+
+    /**
+     * Thread is muted until this date
+     * @return date or null if not muted
+     */
+    mutedUntil(): Date | undefined
+
 }

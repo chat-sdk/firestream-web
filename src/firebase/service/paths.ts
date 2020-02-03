@@ -24,6 +24,10 @@ export class Paths extends Keys {
         return this.userPath(this.currentUserId()).child(Keys.Chats)
     }
 
+    static userMutedPath(): Path {
+        return this.userPath(this.currentUserId()).child(Keys.Muted)
+    }
+
     static userGroupChatPath(chatId: string): Path {
         return this.userChatsPath().child(chatId)
     }

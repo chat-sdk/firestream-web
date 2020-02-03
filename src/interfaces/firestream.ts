@@ -117,4 +117,40 @@ export interface IFireStream extends IAbstractChat {
     markReceived(fromUserId: string, sendableId: string): Promise<void>
     markRead(fromUserId: string, sendableId: string): Promise<void>
 
+    /**
+     * Mute notifications for a user
+     * @param user to mute
+     * @return completion
+     */
+    mute(user: User): Promise<void>
+
+    /**
+     * Mute notifications until a future date
+     * @param user to mute
+     * @param until to mute until
+     * @return completion
+     */
+    mute(user: User, until: Date): Promise<void>
+
+    /**
+     * Unmute notifications for a user
+     * @param user to unmute
+     * @return completion
+     */
+    unmute(user: User): Promise<void>
+
+    /**
+     * Use this method to find out if the user is muted and until when
+     * @param user to check
+     * @return date or null if not muted
+     */
+    mutedUntil(user: User): Date | undefined
+
+    /**
+     * Is a user muted?
+     * @param user to mute
+     * @return true / false
+     */
+    isMuted(user: User): boolean
+
 }

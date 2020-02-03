@@ -16,6 +16,8 @@ import { RealtimeChatHandler } from './firebase/realtime/realtime-chat-handler'
 import { RealtimeCoreHandler } from './firebase/realtime/realtime-core-handler'
 import { MultiQueueSubject } from './firebase/rx/multi-queue-subject'
 import { FirebaseService } from './firebase/service/firebase-service'
+import { Keys } from './firebase/service/keys'
+import { MuteService } from './firebase/service/mute-serve'
 import { Path } from './firebase/service/path'
 import { Paths } from './firebase/service/paths'
 import { FireStreamStore } from './firestream-store'
@@ -200,6 +202,18 @@ export class FireStream extends AbstractChat implements IFireStream {
                     .catch(this.error)
             } else {
                 this.chatEvents.next(chatEvent)
+            }
+        }))
+
+        this.sm.add(this.listChangeOn(Paths.userMutedPath()).subscribe(listDataEvent => {
+            const id = listDataEvent.get().getId()
+            if (listDataEvent.typeIs(EventType.Removed)) {
+                MuteService.remove(id)
+            } else {
+                const date = listDataEvent.get().getData()[Keys.Date]
+                if (date instanceof Date) {
+                    MuteService.add(id, date)
+                }
             }
         }))
 
@@ -412,6 +426,22 @@ export class FireStream extends AbstractChat implements IFireStream {
 
     getFirebaseService(): FirebaseService {
         return FirebaseService.shared
+    }
+
+    mute(user: User | string, until?: Date): Promise<void> {
+        return MuteService.mute(user, until)
+    }
+
+    unmute(user: User | string): Promise<void> {
+        return MuteService.unmute(user)
+    }
+
+    mutedUntil(user: User | string): Date | undefined {
+        return MuteService.mutedUntil(user)
+    }
+
+    isMuted(user: User | string): boolean {
+        return MuteService.isMuted(user)
     }
 
 }

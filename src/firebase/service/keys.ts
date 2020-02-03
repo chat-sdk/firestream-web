@@ -17,5 +17,6 @@ export class Keys {
     static Blocked = 'blocked'
     static Chats = 'chats'
     static Meta = 'meta'
+    static Muted = 'muted'
 
 }

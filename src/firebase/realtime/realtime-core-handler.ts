@@ -168,4 +168,12 @@ export class RealtimeCoreHandler extends FirebaseCoreHandler {
         return users.map(user => provider.data(user))
     }
 
+    mute(path: Path, data: IJsonObject): Promise<void> {
+        return new RxRealtime().set(Ref.get(path), data)
+    }
+
+    unmute(path: Path): Promise<void> {
+        return new RxRealtime().delete(Ref.get(path))
+    }
+
 }

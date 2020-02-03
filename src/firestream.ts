@@ -9,7 +9,7 @@ import { ErrorMessage } from './error-messages'
 import { Event } from './events'
 import { ConnectionEvent } from './events/connection-event'
 import { EventType } from './events/event-type'
-import { MessageStreamFilter } from './filter/message-stream-filter'
+import { Filter } from './filter/filter'
 import { FirestoreChatHandler } from './firebase/firestore/firestore-chat-handler'
 import { FirestoreCoreHandler } from './firebase/firestore/firestore-core-handler'
 import { RealtimeChatHandler } from './firebase/realtime/realtime-chat-handler'
@@ -114,7 +114,7 @@ export class FireStream extends AbstractChat implements IFireStream {
         let $streamEvents = this.getSendableEvents().getSendables().allEvents()
         if (!FireStreamStore.config.deleteMessagesOnReceipt) {
             $streamEvents = $streamEvents.pipe(
-                filter(MessageStreamFilter.eventBySendableType(SendableType.typingState(), SendableType.presence()))
+                filter(Filter.eventBySendableType(SendableType.typingState(), SendableType.presence()))
             )
         }
         // If deletion is enabled, we don't filter so we delete all the message types
@@ -123,21 +123,28 @@ export class FireStream extends AbstractChat implements IFireStream {
 
         // DELIVERY RECEIPTS
 
-        this.sm.add(this.getSendableEvents().getMessages().allEvents().subscribe(async event => {
-            try {
-                // If delivery receipts are enabled, send the delivery receipt
-                if (FireStreamStore.config.deliveryReceiptsEnabled) {
-                    await this.markReceived(event.get())
-                }
-                // If message deletion is disabled, instead mark the message as received. This means
-                // that when we add a listener, we only get new messages
-                if (!FireStreamStore.config.deleteMessagesOnReceipt) {
-                    await this.sendDeliveryReceipt(this.currentUserId()!, DeliveryReceiptType.received(), event.get().getId())
-                }
-            } catch (err) {
-                this.error(err)
-            }
-        }))
+        this.sm.add(this.getSendableEvents()
+            .getMessages()
+            .allEvents()
+            .pipe(filter(this.deliveryReceiptFilter()))
+            .pipe(flatMap(event => this.markReceived(event.get())))
+            .subscribe(() => {}, this.error))
+
+        // If message deletion is disabled, send a received receipt to ourself for each message. This means
+        // that when we add a childListener, we only get new messages
+        if (!this.getConfig().deleteMessagesOnReceipt && this.getConfig().startListeningFromLastSentMessageDate) {
+            this.sm.add(this.getSendableEvents()
+                .getMessages()
+                .allEvents()
+                .pipe(filter(Filter.notFromMe()))
+                .pipe(flatMap(event => {
+                    const uid = this.currentUserId()
+                    if (!uid) {
+                        throw new Error('currentUserId() retuned undefined')
+                    }
+                    return this.sendDeliveryReceipt(uid, DeliveryReceiptType.received(), event.get().getId())
+                })).subscribe(() => {}, this.error))
+        }
 
         // INVITATIONS
 
@@ -216,11 +223,13 @@ export class FireStream extends AbstractChat implements IFireStream {
     // Messages
     //
 
-    deleteSendable(arg: Path | ISendable): Promise<void> {
+    deleteSendable(arg: Path | ISendable | string): Promise<void> {
         if (arg instanceof Path) {
             return super.deleteSendable(arg)
+        } else if (typeof arg === 'string') {
+            return super.deleteSendable(Paths.messagePath(arg))
         } else {
-            return super.deleteSendable(Paths.messagePath(arg.getId()))
+            return this.deleteSendable(arg.getId())
         }
     }
 
@@ -330,16 +339,28 @@ export class FireStream extends AbstractChat implements IFireStream {
      * Send a read receipt
      * @return completion
      */
-    markRead(sendable: ISendable): Promise<void> {
-        return this.sendDeliveryReceipt(sendable.getFrom(), DeliveryReceiptType.read(), sendable.getId())
+    markRead(from: string, sendableId: string): Promise<void>
+    markRead(sendable: ISendable): Promise<void>
+    markRead(sendableOrFrom: ISendable | string, sendableId?: string): Promise<void> {
+        if (typeof sendableOrFrom === 'string') {
+            return this.sendDeliveryReceipt(sendableOrFrom, DeliveryReceiptType.read(), sendableId!)
+        } else {
+            return this.sendDeliveryReceipt(sendableOrFrom.getFrom(), DeliveryReceiptType.read(), sendableOrFrom.getId())
+        }
     }
 
     /**
      * Send a received receipt
      * @return completion
      */
-    markReceived(sendable: ISendable): Promise<void> {
-        return this.sendDeliveryReceipt(sendable.getFrom(), DeliveryReceiptType.received(), sendable.getId())
+    markReceived(from: string, sendableId: string): Promise<void>
+    markReceived(sendable: ISendable): Promise<void>
+    markReceived(sendableOrFrom: ISendable | string, sendableId?: string): Promise<void> {
+        if (typeof sendableOrFrom === 'string') {
+            return this.sendDeliveryReceipt(sendableOrFrom, DeliveryReceiptType.received(), sendableId!)
+        } else {
+            return this.sendDeliveryReceipt(sendableOrFrom.getFrom(), DeliveryReceiptType.received(), sendableOrFrom.getId())
+        }
     }
 
     //
@@ -368,7 +389,7 @@ export class FireStream extends AbstractChat implements IFireStream {
 
     protected dateOfLastDeliveryReceipt(): Promise<Date> {
         if (FireStreamStore.config.deleteMessagesOnReceipt) {
-            return Promise.resolve(new Date(0))
+            return Promise.resolve(this.getConfig().listenToMessagesWithTimeAgo.getDate())
         } else {
             return super.dateOfLastDeliveryReceipt()
         }

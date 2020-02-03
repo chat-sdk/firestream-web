@@ -286,11 +286,17 @@ export interface IChat extends IAbstractChat {
     send(sendable: ISendable): Promise<void>
 
     /**
-     * Delete a sendable
-     * @param sendable to delete
+    * Messages can always be deleted locally. Messages can only be deleted remotely
+     * for recent messages. Specifically, when the client connects, it will add a
+     * message listener to get an update for "new" messages. By default, we listen
+     * to messages that were added after we last sent a message or a received delivery
+     * receipt. This is the dateOfLastDeliveryReceipt. A client will only pick up
+     * remote delivery receipts if the date of delivery is after this date.
+     * @param sendable to be deleted
      * @return promise
      */
     deleteSendable(sendable: ISendable): Promise<void>
+    deleteSendable(sendableId: string): Promise<void>
 
     /**
      * Mark a message as received
@@ -298,6 +304,7 @@ export interface IChat extends IAbstractChat {
      * @return promise
      */
     markReceived(sendable: ISendable): Promise<void>
+    markReceived(sendableId: string): Promise<void>
 
     /**
      * Mark a message as read
@@ -305,5 +312,6 @@ export interface IChat extends IAbstractChat {
      * @return promise
      */
     markRead(sendable: ISendable): Promise<void>
+    markRead(sendableId: string): Promise<void>
 
 }

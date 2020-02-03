@@ -5,7 +5,7 @@ import { ErrorMessage } from '../error-messages'
 import { Event } from '../events'
 import { EventType } from '../events/event-type'
 import { ListData } from '../events/list-data'
-import { MessageStreamFilter } from '../filter/message-stream-filter'
+import { Filter } from '../filter/filter'
 import { MultiQueueSubject } from '../firebase/rx/multi-queue-subject'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Keys } from '../firebase/service/keys'
@@ -65,7 +65,7 @@ export class Chat extends AbstractChat implements IChat {
             this.sm.add(this.getSendableEvents()
                     .getMessages()
                     .allEvents()
-                    .pipe(filter(MessageStreamFilter.notFromMe()))
+                    .pipe(filter(this.deliveryReceiptFilter()))
                     .pipe(flatMap(event => this.markReceived(event.get())))
                     .subscribe(this))
         }
@@ -309,12 +309,20 @@ export class Chat extends AbstractChat implements IChat {
         return Send.toPath(Paths.chatMessagesPath(this.id), sendable, newId)
     }
 
-    markReceived(sendable: ISendable): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.received(), sendable.getId())
+    markReceived(sendable: ISendable | string): Promise<void> {
+        if (typeof sendable === 'string') {
+            return this.sendDeliveryReceipt(DeliveryReceiptType.received(), sendable)
+        } else {
+            return this.markReceived(sendable.getId())
+        }
     }
 
-    markRead(sendable: ISendable): Promise<void> {
-        return this.sendDeliveryReceipt(DeliveryReceiptType.read(), sendable.getId())
+    markRead(sendable: ISendable | string): Promise<void> {
+        if (typeof sendable === 'string') {
+            return this.sendDeliveryReceipt(DeliveryReceiptType.read(), sendable)
+        } else {
+            return this.markRead(sendable.getId())
+        }
     }
 
     public getMyRoleType(): RoleType | undefined {
@@ -373,11 +381,13 @@ export class Chat extends AbstractChat implements IChat {
         return this.getMyRoleType()?.test(permission) || false
     }
 
-    deleteSendable(arg: Path | ISendable): Promise<void> {
+    deleteSendable(arg: Path | ISendable | string): Promise<void> {
         if (arg instanceof Path) {
             return super.deleteSendable(arg)
+        } else if (typeof arg === 'string') {
+            return super.deleteSendable(this.messagesPath().child(arg))
         } else {
-            return super.deleteSendable(this.messagesPath().child(arg.getId()))
+            return this.deleteSendable(arg.getId())
         }
     }
 

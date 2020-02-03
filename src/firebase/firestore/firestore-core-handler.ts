@@ -138,9 +138,9 @@ export class FirestoreCoreHandler extends FirebaseCoreHandler {
     }
 
     /**
-     * Start listening to the current errorMessage reference and pass the messages to the events
+     * Start listening to the current message reference and pass the messages to the events
      * @param newerThan only listen for messages after this date
-     * @return a events of errorMessage results
+     * @return a events of message results
      */
     messagesOn(messagesPath: Path, newerThan: Date, limit: number): Observable<Event<ISendable>> {
         let query = Ref.collection(messagesPath) as firestore.Query

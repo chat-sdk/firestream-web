@@ -4,6 +4,7 @@ import { catchError } from 'rxjs/operators'
 import { Event } from '../events'
 import { EventType } from '../events/event-type'
 import { ListData } from '../events/list-data'
+import { Filter, Predicate } from '../filter/filter'
 import { SubscriptionMap } from '../firebase/rx/subscription-map'
 import { FirebaseService } from '../firebase/service/firebase-service'
 import { Path } from '../firebase/service/path'
@@ -52,10 +53,16 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
     }
 
     /**
-     * Start listening to the current errorMessage reference and pass the messages to the events
-     * @param newerThan only listen for messages after this date
-     * @return a events of errorMessage results
+     * Start listening to the current message reference and retrieve all messages
+     * @return a events of message results
      */
+    protected messagesOn(): Observable<Event<ISendable>>
+    /**
+     * Start listening to the current message reference and pass the messages to the events
+     * @param newerThan only listen for messages after this date
+     * @return a events of message results
+     */
+    protected messagesOn(newerThan: Date): Observable<Event<ISendable>>
     protected messagesOn(newerThan?: Date): Observable<Event<ISendable>> {
         const $events = FirebaseService.core.messagesOn(this.messagesPath(), newerThan, FireStreamStore.config.messageHistoryLimit)
         $events.forEach(event => {
@@ -85,7 +92,7 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
      * @param fromDate get messages from this date
      * @param toDate get messages until this date
      * @param limit limit the maximum number of messages
-     * @return a events of errorMessage results
+     * @return a events of message results
      */
     loadMoreMessages(fromDate?: Date, toDate?: Date, limit?: number): Promise<ISendable[]> {
         return FirebaseService.core.loadMoreMessages(this.messagesPath(), fromDate, toDate, limit)
@@ -261,6 +268,10 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
         }
     }
 
+    getSendablesAs<T extends ISendable>(instanceClass: new () => T, type?: SendableType): T[] {
+        return this.getSendables(type).map(s => s.copyTo(new instanceClass()))
+    }
+
     getSendable(id: string): ISendable | undefined {
         for (const sendable of this.sendables) {
             if (sendable.getId() === id) {
@@ -293,5 +304,13 @@ export abstract class AbstractChat implements ErrorObserver<any>, IAbstractChat 
 
     abstract markRead(sendable: ISendable): Promise<void>
     abstract markReceived(sendable: ISendable): Promise<void>
+
+    protected deliveryReceiptFilter(): Predicate<Event<ISendable>> {
+        return Filter.combine(
+            Filter.markReceived(FireStreamStore.config),
+            Filter.notFromMe(),
+            Filter.byEventType(EventType.Added),
+        )
+    }
 
 }

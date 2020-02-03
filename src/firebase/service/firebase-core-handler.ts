@@ -71,7 +71,7 @@ export abstract class FirebaseCoreHandler {
      * @param fromDate get messages from this date
      * @param toDate get messages until this date
      * @param limit limit the maximum number of messages
-     * @return a events of errorMessage results
+     * @return a events of message results
      */
     abstract loadMoreMessages(messagesPath: Path, fromDate?: Date, toDate?: Date, limit?: number): Promise<ISendable[]>
 
@@ -84,11 +84,11 @@ export abstract class FirebaseCoreHandler {
     abstract dateOfLastSentMessage(messagesPath: Path): Promise<Date>
 
     /**
-     * Start listening to the current errorMessage reference and pass the messages to the events
+     * Start listening to the current message reference and pass the messages to the events
      * @param messagesPath
      * @param newerThan only listen for messages after this date
      * @param limit limit the maximum number of historic messages
-     * @return a events of errorMessage results
+     * @return a events of message results
      */
     abstract messagesOn(messagesPath: Path, newerThan?: Date, limit?: number): Observable<Event<ISendable>>
 

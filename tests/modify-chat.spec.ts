@@ -80,7 +80,7 @@ export const modifyChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (t
 
         await new Promise(resolve => setTimeout(resolve, 4000))
 
-        // Check the chat isType correct
+        // Check the chat is correct
         // Check the name matches
         if (chat.getName() !== chatName) {
             throw new Error('Name mismatch')
@@ -131,6 +131,18 @@ export const modifyChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (t
                 throw new Error('Custom data from stream incorrect')
             }
         }
+
+        // if (userEvents.length === 0) {
+        //     throw new Error('User events not received')
+        // } else {
+        //     for (const ue of userEvents) {
+        //         for (const u of testUsers) {
+        //             if (ue.get().equals(u) && !ue.get().equalsRoleType(u)) {
+        //                 throw new Error('Role type not updated correctly')
+        //             }
+        //         }
+        //     }
+        // }
 
         userEventsSubscription.unsubscribe()
 

@@ -30,9 +30,9 @@ export interface IFireStream extends IAbstractChat {
 
     /**
      * Send a delivery receipt to a user. If delivery receipts are enabled,
-     * a 'received' status will be returned as soon as a errorMessage isType delivered
+     * a 'received' status will be returned as soon as a message is delivered
      * and then you can then manually send a 'read' status when the user
-     * actually reads the errorMessage
+     * actually reads the message
      * @param userId the recipient user id
      * @param type the status getTypingStateType
      * @return promise
@@ -43,7 +43,18 @@ export interface IFireStream extends IAbstractChat {
 
     send(toUserId: string, sendable: Sendable, newId?: Consumer<string>): Promise<void>
 
+    /**
+     * Messages can always be deleted locally. Messages can only be deleted remotely
+     * for recent messages. Specifically, when the client connects, it will add a
+     * message listener to get an update for "new" messages. By default, we listen
+     * to messages that were added after we last sent a message or a received delivery
+     * receipt. This is the dateOfLastDeliveryReceipt. A client will only pick up
+     * remote delivery receipts if the date of delivery is after this date.
+     * @param sendable to be deleted
+     * @return completion
+     */
     deleteSendable(sendable: Sendable): Promise<void>
+    deleteSendable(sendableId: string): Promise<void>
 
     sendPresence(userId: string, type: PresenceType, newId?: Consumer<string>): Promise<void>
 
@@ -102,5 +113,8 @@ export interface IFireStream extends IAbstractChat {
     getBlockedEvents(): MultiQueueSubject<Event<User>>
     getContactEvents(): MultiQueueSubject<Event<User>>
     getConnectionEvents(): Observable<ConnectionEvent>
+
+    markReceived(fromUserId: string, sendableId: string): Promise<void>
+    markRead(fromUserId: string, sendableId: string): Promise<void>
 
 }

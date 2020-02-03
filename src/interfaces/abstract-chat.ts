@@ -49,6 +49,13 @@ export interface IAbstractChat {
     getSendables(type: SendableType): ISendable[]
 
     /**
+     * Get a list of sendables given a class
+     * @param instanceClass class of sendable
+     * @return list of sendables
+     */
+    getSendablesAs<T extends ISendable>(instanceClass: new () => T, type?: SendableType): T[]
+
+    /**
      * Get a sendable for a particular ID
      * @param id of sendable
      * @return sendable or undefined

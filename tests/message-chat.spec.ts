@@ -167,7 +167,7 @@ export const messageChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (
         const from = fromSendable.getDate()
         const to = toSendable.getDate()
 
-        // There isType a timing issue here in that the date of the sendable
+        // There is a timing issue here in that the date of the sendable
         // will actually be a Firebase prediction rather than the actual time recorded on the server
         {
             const sendablesFromTo = await chat.loadMoreMessages(from, to)
@@ -186,12 +186,12 @@ export const messageChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (
             if (!last.equals(toSendable)) {
                 throw new Error('From/To Last message incorrect')
             }
-            // Check the first message isType on or after the from date
+            // Check the first message is on or after the from date
             if (first.getDate().getTime() <= from.getTime()) {
-                throw new Error('From/To First message isType before from time')
+                throw new Error('From/To First message is before from time')
             }
             if (last.getDate().getTime() > to.getTime()) {
-                throw new Error('From/To Last message isType after to time')
+                throw new Error('From/To Last message is after to time')
             }
             if (second.getDate().getTime() < first.getDate().getTime()) {
                 throw new Error('From/To Messages order incorrect')
@@ -215,9 +215,9 @@ export const messageChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (
                 throw new Error('From Last message incorrect')
             }
 
-            // Check the first message isType on or after the from date
+            // Check the first message is on or after the from date
             if (first.getDate().getTime() <= from.getTime()) {
-                throw new Error('From First message isType before from time')
+                throw new Error('From First message is before from time')
             }
             if (second.getDate().getTime() < first.getDate().getTime()) {
                 throw new Error('From Messages order incorrect')
@@ -240,7 +240,7 @@ export const messageChatTest = (FS: IFireStream, sm: SubscriptionMap) => async (
                 throw new Error('To Last message incorrect')
             }
             if (last.getDate().getTime() > to.getTime()) {
-                throw new Error('To Last message isType after to time')
+                throw new Error('To Last message is after to time')
             }
             if (second.getDate().getTime() < first.getDate().getTime()) {
                 throw new Error('To Messages order incorrect')

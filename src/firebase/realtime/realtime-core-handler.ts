@@ -85,7 +85,7 @@ export class RealtimeCoreHandler extends FirebaseCoreHandler {
     async dateOfLastSentMessage(messagesPath: Path): Promise<Date> {
         let query = Ref.get(messagesPath) as database.Query
 
-        query = query.equalTo(FireStreamStore.userId || null, Keys.From)
+        query = query.equalTo(FireStreamStore.userId || null)
         query = query.orderByChild(Keys.From)
         query = query.limitToLast(1)
 
